@@ -1,32 +1,36 @@
 // These are more forgiving top-level config type things
-const name = "How to Draw an Owl"
-const description = "Draw your very own owl in time for the holidays!"
-const estimatedCost = {
-  currency: 'USD',
-  value: '0'
-}
+const name = "How to use iOS 15’s new Focus modes"
+const description = "When you first start to set Focus up, it can seem a little daunting. There are a lot of choices, and a lot of ways you can tweak it. In fact, it may take a while before you get the combination of settings that works best for your lifestyle. But in the end, it will be worth it — it will mean that you won’t be sidelined during times you need to concentrate, and you won’t be bothered by irrelevant notifications when you’ve got other activities in hand."
+const estimatedCost = null
+// const estimatedCost = {
+//   currency: 'USD',
+//   value: '0'
+// }
 const prepTime = null
 const performTime = null
-const totalTime = 'PT30M'
+const totalTime = null
+// const totalTime = 'PT30M'
 
 // These arrays are both object with name and image keys
 // names are string, images are URLs
-const tools = [{
-  name: 'Pencil',
-  image: null
-},{
-  name: 'Pen',
-  image: null
-}]
-const supplies = [
-  {
-    name: 'Ink',
-    image: null
-  },{
-    name: 'Ink',
-    image: null
-  }
-]
+const tools = []
+// const tools = [{
+//   name: 'Pencil',
+//   image: null
+// },{
+//   name: 'Pen',
+//   image: null
+// }]
+const supplies = []
+// const supplies = [
+//   {
+//     name: 'Ink',
+//     image: null
+//   },{
+//     name: 'Ink',
+//     image: null
+//   }
+// ]
 
 // Steps are an array of `step` values
 // The order of elements in the array _is_ important.
