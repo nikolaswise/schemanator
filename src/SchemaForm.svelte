@@ -87,7 +87,7 @@
         class="draggable"
         animate:flip="{{duration: flipDurationMs}}"
       >
-        <StepGroup {step} />
+        <StepGroup bind:step={step} />
       </div>
     {/each}
   </div>

@@ -20,7 +20,8 @@ const mapSteps = (arr) => arr.map((step, i) => {
       return {
         "@type": dir.type,
         "position": `${i + 1}`,
-        "text": dir.text
+        "text": dir.text,
+        "image": dir.image
       }
     })
   }

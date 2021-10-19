@@ -20,7 +20,7 @@ export const steps = writable([
       {
         text: "Draw a Circle",
         type: "HowToDirection",
-        image: null,
+        image: 'uri:like_this',
       }
     ]
   },{
