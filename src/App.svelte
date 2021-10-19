@@ -1,40 +1,37 @@
 <script>
-    import {flip} from "svelte/animate";
-    import {dndzone} from "svelte-dnd-action";
-    let items = [
-        {id: 1, name: "item1"},
-        {id: 2, name: "item2"},
-        {id: 3, name: "item3"},
-        {id: 4, name: "item4"}
-    ];
-    const flipDurationMs = 300;
-    function handleDndConsider(e) {
-        items = e.detail.items;
-    }
-    function handleDndFinalize(e) {
-        items = e.detail.items;
-    }
+	import CodeBlock from './CodeBlock.svelte'
+	import Config from './Config.svelte'
+	import SchemaForm from './SchemaForm.svelte'
 </script>
 
-<section use:dndzone="{{items, flipDurationMs}}" on:consider="{handleDndConsider}" on:finalize="{handleDndFinalize}">
-    {#each items as item(item.id)}
-    <div animate:flip="{{duration: flipDurationMs}}">{item.name}</div>
-    {/each}
-</section>
+<header>
+	<h1>Schemanator: How-To</h1>
+</header>
+
+<main>
+	<section>
+		<!-- <Config /> -->
+		<SchemaForm />
+	</section>
+	<section>
+		<CodeBlock />
+	</section>
+</main>
 
 <style>
-    section {
-        width: 50%;
-        padding: 0.3em;
-        border: 1px solid black;
-        /* this will allow the dragged element to scroll the list */
-        overflow: scroll;
-        height: 200px;
-    }
-    div {
-        width: 50%;
-        padding: 0.2em;
-        border: 1px solid blue;
-        margin: 0.15em 0;
-    }
+	header {
+		max-width: var(--container-width);
+		margin: auto;
+	}
+	main {
+		max-width: var(--container-width);
+		margin: auto;
+		padding: 1rem;
+	  display: grid;
+	  grid-gap: 4rem;
+	  grid-template-columns: repeat(
+	  	auto-fill,
+	  	minmax(var(--section-width), 1fr)
+	  );
+	}
 </style>

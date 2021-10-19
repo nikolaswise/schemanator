@@ -1,3 +1,13 @@
+:root {
+	--section-width: 30rem;
+	--container-width: 64rem;
+	--white: #eae9e3;
+	--off-white: #e4e4de;
+	--light-gray: #dbdad5;
+	--dark-gray: #484846;
+	--black: #343433;
+}
+
 html, body {
 	position: relative;
 	width: 100%;
@@ -5,7 +15,8 @@ html, body {
 }
 
 body {
-	color: #333;
+	color: var(--black);
+	background-color: var(--off-white);
 	margin: 0;
 	padding: 8px;
 	box-sizing: border-box;
