@@ -1,4 +1,7 @@
 <script>
+  import {flip} from "svelte/animate";
+  import {dndzone} from "svelte-dnd-action";
+
   import {
     name,
     description,
@@ -15,8 +18,6 @@
   } from './data'
 
   import StepGroup from './StepGroup.svelte';
-  import {flip} from "svelte/animate";
-  import {dndzone} from "svelte-dnd-action";
 
   const flipDurationMs = 300;
 
@@ -27,6 +28,7 @@
   function handleDndFinalize(e) {
     $steps = e.detail.items;
   }
+
 </script>
 
 <form>
