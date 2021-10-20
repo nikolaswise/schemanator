@@ -2,8 +2,8 @@ import { writable } from 'svelte/store';
 
 export const activeOptions = writable([])
 
-export const name = writable('How To Draw an Owl')
-export const description = writable('Learn how to draw your very own own, in time for the holidays!')
+export const name = writable('')
+export const description = writable('')
 export const estimatedCostNumber = writable()
 export const estimatedCostUnit = writable('USD')
 export const prepTime = writable('')
@@ -67,16 +67,9 @@ const sample_steps = [
 ]
 
 export const sections = writable([{
-  id: '09esgjs',
-  name: 'Penciling an Owl',
-  steps: sample_steps
-},{
-  id: 'owiufgbs',
-  name: 'Inking an Owl',
-  steps: []
-},{
-  id: '3tiowh',
-  name: 'Coloring an Owl',
+  id: 'sample_id',
+  name: '',
   steps: []
 }])
-export const steps = writable(sample_steps)
+
+export const steps = writable([])

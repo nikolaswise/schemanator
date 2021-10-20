@@ -19,6 +19,7 @@
 
   import Steps from './Steps.svelte';
   import Sections from './Sections.svelte';
+  import Materials from './Materials.svelte';
 
   let hasSections = $sections.length > 0 ? true : false
   let tmpSections
@@ -82,6 +83,20 @@
       name="totalTime"
     >
   </label>
+
+  <p>
+    Tools:
+  </p>
+  <Materials bind:items={$tools}/>
+
+  <p>
+    Supplies:
+  </p>
+  <Materials bind:items={$supplies}/>
+
+  <p>
+    Supplies:
+  </p>
 
   <p>
     Steps:

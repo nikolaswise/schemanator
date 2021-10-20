@@ -113,8 +113,8 @@ export const generateSchema = ({
     prepTime,
     performTime,
     totalTime,
-    // tool: mapDependencies('HowToTool')(tools),
-    // supply: mapDependencies('HowToSupply')(supplies),
+    tool: mapDependencies('HowToTool')(tools),
+    supply: mapDependencies('HowToSupply')(supplies),
     "step": sections ? mapSections(sections) : mapSteps(steps)
   })
 }
