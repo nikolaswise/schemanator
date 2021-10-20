@@ -29,7 +29,6 @@
   }
 
   const handleSectionDelete = (e) => {
-    console.log(`delete that section ${e}`)
     $sections = $sections.filter(section => {
       return section.id !== e
     })

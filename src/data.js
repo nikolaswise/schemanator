@@ -20,7 +20,7 @@ const sample_steps = [
         id: "2rwf",
         text: "Draw a Circle",
         type: "HowToDirection",
-        image: 'uri:like_this',
+        image: 'http://www.fillmurray.com/200/300',
       }
     ]
   },{

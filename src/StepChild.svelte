@@ -12,7 +12,6 @@
   }
 
   const handleImage = (e) => {
-    console.log(e.target.checked)
     e.target.checked
       ? hasImage = true
       : clearImage()
@@ -20,7 +19,6 @@
 
   const deleteChild = (e) => {
     e.preventDefault()
-    console.log(`delete this sweet child ${child.id}`)
     dispatch('delete', {id: child.id})
   }
 </script>
@@ -58,13 +56,22 @@
   </label>
 
   {#if hasImage}
-    <label>
-      Image URL:
-      <input
-        bind:value={child.image}
-        type="text"
-      />
-    </label>
+    <div class="image-preview">
+      <label>
+        Image URL:
+        <input
+          bind:value={child.image}
+          type="text"
+        />
+      </label>
+      <figure>
+        {#if child.image}
+          <img src="{child.image}">
+        {:else}
+          ✕
+        {/if}
+      </figure>
+    </div>
   {/if}
   <div class="right">
     <button on:click={deleteChild}>
@@ -110,5 +117,26 @@
   }
   .right {
     text-align: right;
+  }
+  .image-preview {
+    display: flex;
+  }
+  .image-preview label {
+    flex: 1;
+  }
+  figure {
+    margin: 0 0 0.5rem 1rem;
+    border: 1px solid var(--light-gray);
+    width: 5rem;
+    height: 5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 </style>
