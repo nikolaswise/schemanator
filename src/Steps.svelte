@@ -1,6 +1,8 @@
 <script>
   import {flip} from "svelte/animate";
   import {dndzone} from "svelte-dnd-action";
+  import short from "short-uuid"
+
   import {
     steps,
   } from './data.js'
@@ -22,6 +24,15 @@
     sectionSteps
       ? sectionSteps = array
       : $steps = array
+  }
+
+  const createNewStep = (e) => {
+    e.preventDefault()
+    array = [...array, {
+      id: short.generate(),
+      name: '',
+      children: []
+    }]
   }
 
   $: {
@@ -49,6 +60,9 @@
     </div>
   {/each}
 </div>
+<button on:click={createNewStep}>
+  Add Step
+</button>
 
 <style>
   .draggable {

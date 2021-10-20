@@ -1,6 +1,7 @@
 <script>
   import {flip} from "svelte/animate";
   import {dndzone} from "svelte-dnd-action";
+  import short from "short-uuid"
   import StepChild from './StepChild.svelte'
   export let step
 
@@ -13,6 +14,17 @@
   function handleDndFinalize(e) {
     step.children = e.detail.items;
   }
+
+  const createNewChild = (e) => {
+    e.preventDefault()
+    step.children = [...step.children, {
+      id: short.generate(),
+      text: '',
+      type: 'HowToDirection',
+      image: null,
+    }]
+  }
+
 </script>
 
 <div class="step-group">
@@ -29,6 +41,9 @@
       <StepChild child={child} />
     {/each}
   </div>
+  <button on:click={createNewChild}>
+    Add Item
+  </button>
 </div>
 
 <style>

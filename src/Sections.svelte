@@ -1,6 +1,8 @@
 <script>
   import {flip} from "svelte/animate";
   import {dndzone} from "svelte-dnd-action";
+  import short from "short-uuid"
+
   import {
     sections,
   } from './data.js'
@@ -15,6 +17,15 @@
 
   function handleDndFinalize(e) {
     $sections = e.detail.items;
+  }
+
+  const createNewSection = (e) => {
+    e.preventDefault()
+    $sections = [...$sections, {
+      id: short.generate(),
+      name: '',
+      steps: []
+    }]
   }
 
 </script>
@@ -45,6 +56,9 @@
     </div>
   {/each}
 </div>
+<button on:click={createNewSection}>
+  Add Section
+</button>
 
 <style>
   .section {
