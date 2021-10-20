@@ -3,7 +3,7 @@
   import {dndzone} from "svelte-dnd-action";
   import {
     steps,
-  } from './data'
+  } from './data.js'
 
   import StepGroup from './StepGroup.svelte';
 

@@ -1,6 +1,5 @@
 <script>
 	import CodeBlock from './CodeBlock.svelte'
-	import Config from './Config.svelte'
 	import SchemaForm from './SchemaForm.svelte'
 </script>
 
@@ -10,7 +9,6 @@
 
 <main>
 	<section>
-		<!-- <Config /> -->
 		<SchemaForm />
 	</section>
 	<section>

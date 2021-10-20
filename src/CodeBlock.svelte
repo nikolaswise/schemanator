@@ -11,7 +11,7 @@
     supplies,
     sections,
     steps    ,
-  } from './data'
+  } from './data.js'
 
   import { generateSchema } from './generateSchema.js'
 

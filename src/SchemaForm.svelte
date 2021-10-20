@@ -15,7 +15,7 @@
     supplies,
     sections,
     steps,
-  } from './data'
+  } from './data.js'
 
   import Steps from './Steps.svelte';
   import Sections from './Sections.svelte';

@@ -3889,7 +3889,7 @@ ${JSON.stringify(
     			create_component(stepgroup.$$.fragment);
     			t = space();
     			attr_dev(div, "class", "draggable svelte-1hhmo8r");
-    			add_location(div, file$3, 26, 4, 525);
+    			add_location(div, file$3, 26, 4, 528);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -3974,7 +3974,7 @@ ${JSON.stringify(
     				each_blocks[i].c();
     			}
 
-    			add_location(div, file$3, 20, 0, 358);
+    			add_location(div, file$3, 20, 0, 361);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4155,11 +4155,11 @@ ${JSON.stringify(
     			attr_dev(input, "type", "text");
     			attr_dev(input, "name", "sectionName");
     			attr_dev(input, "class", "svelte-flfmj5");
-    			add_location(input, file$2, 34, 8, 702);
+    			add_location(input, file$2, 34, 8, 705);
     			attr_dev(label, "class", "svelte-flfmj5");
-    			add_location(label, file$2, 32, 6, 662);
+    			add_location(label, file$2, 32, 6, 665);
     			attr_dev(div, "class", "section draggable svelte-flfmj5");
-    			add_location(div, file$2, 28, 4, 563);
+    			add_location(div, file$2, 28, 4, 566);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -4251,7 +4251,7 @@ ${JSON.stringify(
     				each_blocks[i].c();
     			}
 
-    			add_location(div, file$2, 22, 0, 384);
+    			add_location(div, file$2, 22, 0, 387);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4551,43 +4551,43 @@ ${JSON.stringify(
     			attr_dev(input0, "type", "text");
     			attr_dev(input0, "name", "name");
     			attr_dev(input0, "class", "svelte-ayxrk9");
-    			add_location(input0, file$1, 38, 4, 720);
+    			add_location(input0, file$1, 38, 4, 723);
     			attr_dev(label0, "class", "svelte-ayxrk9");
-    			add_location(label0, file$1, 36, 2, 698);
+    			add_location(label0, file$1, 36, 2, 701);
     			attr_dev(textarea, "type", "text");
     			attr_dev(textarea, "name", "description");
     			attr_dev(textarea, "class", "svelte-ayxrk9");
-    			add_location(textarea, file$1, 46, 4, 836);
+    			add_location(textarea, file$1, 46, 4, 839);
     			attr_dev(label1, "class", "svelte-ayxrk9");
-    			add_location(label1, file$1, 44, 2, 807);
+    			add_location(label1, file$1, 44, 2, 810);
     			attr_dev(input1, "type", "text");
     			attr_dev(input1, "name", "preptime");
     			attr_dev(input1, "class", "svelte-ayxrk9");
-    			add_location(input1, file$1, 54, 4, 968);
+    			add_location(input1, file$1, 54, 4, 971);
     			attr_dev(label2, "class", "svelte-ayxrk9");
-    			add_location(label2, file$1, 52, 2, 941);
+    			add_location(label2, file$1, 52, 2, 944);
     			attr_dev(input2, "type", "text");
     			attr_dev(input2, "name", "performTime");
     			attr_dev(input2, "class", "svelte-ayxrk9");
-    			add_location(input2, file$1, 62, 4, 1093);
+    			add_location(input2, file$1, 62, 4, 1096);
     			attr_dev(label3, "class", "svelte-ayxrk9");
-    			add_location(label3, file$1, 60, 2, 1063);
+    			add_location(label3, file$1, 60, 2, 1066);
     			attr_dev(input3, "type", "text");
     			attr_dev(input3, "name", "totalTime");
     			attr_dev(input3, "class", "svelte-ayxrk9");
-    			add_location(input3, file$1, 70, 4, 1222);
+    			add_location(input3, file$1, 70, 4, 1225);
     			attr_dev(label4, "class", "svelte-ayxrk9");
-    			add_location(label4, file$1, 68, 2, 1194);
+    			add_location(label4, file$1, 68, 2, 1197);
     			attr_dev(input4, "type", "checkbox");
     			attr_dev(input4, "name", "useSection");
     			input4.checked = /*hasSections*/ ctx[0];
     			attr_dev(input4, "class", "svelte-ayxrk9");
-    			add_location(input4, file$1, 82, 6, 1377);
+    			add_location(input4, file$1, 82, 6, 1380);
     			attr_dev(label5, "class", "svelte-ayxrk9");
-    			add_location(label5, file$1, 80, 4, 1340);
+    			add_location(label5, file$1, 80, 4, 1343);
     			attr_dev(p, "class", "svelte-ayxrk9");
-    			add_location(p, file$1, 77, 2, 1320);
-    			add_location(form, file$1, 35, 0, 689);
+    			add_location(p, file$1, 77, 2, 1323);
+    			add_location(form, file$1, 35, 0, 692);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
