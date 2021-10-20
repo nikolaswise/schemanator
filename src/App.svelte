@@ -1,6 +1,10 @@
 <script>
+	import { writable } from 'svelte/store';
+	import { get } from 'svelte/store'
+
 	import CodeBlock from './CodeBlock.svelte'
 	import SchemaForm from './SchemaForm.svelte'
+
 </script>
 
 <header>

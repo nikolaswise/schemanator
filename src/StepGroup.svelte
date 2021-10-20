@@ -1,16 +1,43 @@
 <script>
+  import {flip} from "svelte/animate";
+  import {dndzone} from "svelte-dnd-action";
   import StepChild from './StepChild.svelte'
   export let step
+
+  const flipDurationMs = 300;
+
+  function handleDndConsider(e) {
+    step.children = e.detail.items;
+  }
+
+  function handleDndFinalize(e) {
+    step.children = e.detail.items;
+  }
 </script>
 
 <div class="step-group">
   <p>≡ Step:</p>
-  {#each step.children as child}
-    <StepChild bind:child={child} />
-  {/each}
+  <div
+    use:dndzone="{{
+      items: step.children,
+      flipDurationMs,
+      dropFromOthersDisabled: true}}"
+    on:consider="{handleDndConsider}"
+    on:finalize="{handleDndFinalize}"
+  >
+    {#each step.children as child(child.id)}
+      <StepChild child={child} />
+    {/each}
+  </div>
 </div>
 
 <style>
+  .draggable {
+    cursor: grab;
+  }
+  .draggable:active {
+    cursor: grabbing;
+  }
   .step-group {
     border: 1px solid var(--dark-gray);
     background-color: var(--off-white);

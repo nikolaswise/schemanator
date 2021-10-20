@@ -3,7 +3,7 @@
   import {dndzone} from "svelte-dnd-action";
   import {
     sections,
-  } from './data.'
+  } from './data.js'
 
   import Steps from './Steps.svelte';
 
@@ -17,11 +17,14 @@
     $sections = e.detail.items;
   }
 
-  console.log(sections)
 </script>
 
 <div
-  use:dndzone="{{items: $sections, flipDurationMs}}"
+  use:dndzone="{{
+    items: $sections,
+    flipDurationMs,
+    dropFromOthersDisabled: true
+  }}"
   on:consider="{handleDndConsider}"
   on:finalize="{handleDndFinalize}"
 >
@@ -38,7 +41,7 @@
           name="sectionName"
         >
       </label>
-      <Steps />
+      <Steps bind:sectionSteps={section.steps}/>
     </div>
   {/each}
 </div>

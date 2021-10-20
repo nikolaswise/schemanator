@@ -40,6 +40,11 @@ var app = (function () {
         const unsub = store.subscribe(...callbacks);
         return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
     }
+    function get_store_value(store) {
+        let value;
+        subscribe(store, _ => value = _)();
+        return value;
+    }
     function component_subscribe(component, store, callback) {
         component.$$.on_destroy.push(subscribe(store, callback));
     }
@@ -111,12 +116,6 @@ var app = (function () {
     function detach(node) {
         node.parentNode.removeChild(node);
     }
-    function destroy_each(iterations, detaching) {
-        for (let i = 0; i < iterations.length; i += 1) {
-            if (iterations[i])
-                iterations[i].d(detaching);
-        }
-    }
     function element(name) {
         return document.createElement(name);
     }
@@ -138,17 +137,6 @@ var app = (function () {
             node.removeAttribute(attribute);
         else if (node.getAttribute(attribute) !== value)
             node.setAttribute(attribute, value);
-    }
-    function get_binding_group_value(group, __value, checked) {
-        const value = new Set();
-        for (let i = 0; i < group.length; i += 1) {
-            if (group[i].checked)
-                value.add(group[i].__value);
-        }
-        if (!checked) {
-            value.delete(__value);
-        }
-        return Array.from(value);
     }
     function children(element) {
         return Array.from(element.childNodes);
@@ -781,7 +769,7 @@ var app = (function () {
         return { set, update, subscribe };
     }
 
-    const activeOptions$1 = writable([]);
+    const activeOptions = writable([]);
 
     const name = writable('How To Draw an Owl');
     const description = writable('Learn how to draw your very own own, in time for the holidays!');
@@ -798,6 +786,7 @@ var app = (function () {
         id: 'osfnd',
         children: [
           {
+            id: "2rwf",
             text: "Draw a Circle",
             type: "HowToDirection",
             image: 'uri:like_this',
@@ -807,14 +796,17 @@ var app = (function () {
         id: 'soif',
         children: [
           {
+            id: "h6t",
             text: "This next bit is tricky",
             type: "HowToTip",
             image: null,
           },{
+            id: "6yhgd",
             text: "Draw another circle",
             type: "HowToDirection",
             image: null,
           },{
+            id: "fasde",
             text: "Sort of above the first circle.",
             type: "HowToDirection",
             image: null,
@@ -824,14 +816,17 @@ var app = (function () {
         id: 'ps9nba',
         children: [
           {
+           id: "sve4w",
            text: "Draw the rest of the owl.",
            type: "HowToDirection",
            image: null,
         },{
+           id: "o8i7rth",
            text: "Don't fuck it up!",
            type: "HowToTip",
            image: null,
         },{
+           id: "wsvs4",
            text: "It's not that hard",
            type: "HowToTip",
            image: null,
@@ -844,8 +839,49 @@ var app = (function () {
       id: '09esgjs',
       name: 'Penciling an Owl',
       steps: sample_steps
+    },{
+      id: 'owiufgbs',
+      name: 'Inking an Owl',
+      steps: []
+    },{
+      id: '3tiowh',
+      name: 'Coloring an Owl',
+      steps: []
     }]);
     const steps = writable(sample_steps);
+
+    // Accepts array of two values,
+    // returns true if the second value is falsey
+    const isNullOrEmpty = ([key, val]) => {
+      // return !val
+      if (!val) {
+        return true
+      } else {
+        return val.length > 0
+          ? false
+          : true
+      }
+    };
+
+    // Accepts array
+    // returns the first item of that array
+    // lol is this just pop()
+    const getFirstInArray = (arr) => arr[0];
+
+    // Accepts an object
+    // Removes all falsey keys from object
+    // Returns cleaned object
+    const stripNullValues = (obj) => {
+      let emptyKeys = Object
+        .entries(obj)
+        .filter(isNullOrEmpty)
+        .map(getFirstInArray);
+      emptyKeys.forEach(key => {
+        delete obj[key];
+      });
+      return obj
+    };
+
 
     // Accepts a step array, as desribed above
     // Return a HowToStep object
@@ -854,12 +890,12 @@ var app = (function () {
         "@type": "HowToStep",
         "position": `${i + 1}`,
         "itemListElement": step.children.map((dir, i) => {
-          return {
+          return stripNullValues({
             "@type": dir.type,
             "position": `${i + 1}`,
             "text": dir.text,
             "image": dir.image
-          }
+          })
         })
       }
     });
@@ -875,15 +911,6 @@ var app = (function () {
       }
     });
 
-    // Accept the data for the steps and reutrn either
-    // the array of sections
-    // or the array of steps
-    const renderSteps = (arr) => {
-      return arr[0].children[0].name // @TODO lol this is probably kinda gross
-        ? mapSections(arr)
-        : mapSteps(arr)
-    };
-
     // Put it all together and output a JSON-LD blob
     const generateSchema = ({
       name,
@@ -894,8 +921,9 @@ var app = (function () {
       tools,
       supplies,
       steps,
+      sections,
     }) => {
-      return {
+      return stripNullValues({
         "@context": "https://schema.org",
         "@type": "HowTo",
         name,
@@ -905,14 +933,14 @@ var app = (function () {
         totalTime,
         // tool: mapDependencies('HowToTool')(tools),
         // supply: mapDependencies('HowToSupply')(supplies),
-        "step": renderSteps(steps)
-      }
+        "step": mapSections(sections)
+      })
     };
 
     /* src/CodeBlock.svelte generated by Svelte v3.44.0 */
-    const file$7 = "src/CodeBlock.svelte";
+    const file$6 = "src/CodeBlock.svelte";
 
-    function create_fragment$7(ctx) {
+    function create_fragment$6(ctx) {
     	let pre;
     	let code;
     	let t;
@@ -922,9 +950,9 @@ var app = (function () {
     			pre = element("pre");
     			code = element("code");
     			t = text(/*snippet*/ ctx[0]);
-    			add_location(code, file$7, 38, 5, 667);
+    			add_location(code, file$6, 38, 5, 670);
     			attr_dev(pre, "class", "svelte-19ve7ii");
-    			add_location(pre, file$7, 38, 0, 662);
+    			add_location(pre, file$6, 38, 0, 665);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -946,7 +974,7 @@ var app = (function () {
 
     	dispatch_dev("SvelteRegisterBlock", {
     		block,
-    		id: create_fragment$7.name,
+    		id: create_fragment$6.name,
     		type: "component",
     		source: "",
     		ctx
@@ -955,7 +983,7 @@ var app = (function () {
     	return block;
     }
 
-    function instance$7($$self, $$props, $$invalidate) {
+    function instance$6($$self, $$props, $$invalidate) {
     	let $steps;
     	let $sections;
     	let $supplies;
@@ -1078,386 +1106,11 @@ ${JSON.stringify(
     class CodeBlock extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$7, create_fragment$7, safe_not_equal, {});
-
-    		dispatch_dev("SvelteRegisterComponent", {
-    			component: this,
-    			tagName: "CodeBlock",
-    			options,
-    			id: create_fragment$7.name
-    		});
-    	}
-    }
-
-    const activeOptions = writable([]);
-
-    /* src/Config.svelte generated by Svelte v3.44.0 */
-    const file$6 = "src/Config.svelte";
-
-    function get_each_context$3(ctx, list, i) {
-    	const child_ctx = ctx.slice();
-    	child_ctx[6] = list[i];
-    	return child_ctx;
-    }
-
-    // (24:4) {:else}
-    function create_else_block$1(ctx) {
-    	let t;
-
-    	const block = {
-    		c: function create() {
-    			t = text("Edit");
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, t, anchor);
-    		},
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(t);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_else_block$1.name,
-    		type: "else",
-    		source: "(24:4) {:else}",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (22:4) {#if configIsOpen}
-    function create_if_block_1(ctx) {
-    	let t;
-
-    	const block = {
-    		c: function create() {
-    			t = text("Close");
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, t, anchor);
-    		},
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(t);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_if_block_1.name,
-    		type: "if",
-    		source: "(22:4) {#if configIsOpen}",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (30:0) {#if configIsOpen}
-    function create_if_block$2(ctx) {
-    	let div;
-    	let each_value = /*options*/ ctx[3];
-    	validate_each_argument(each_value);
-    	let each_blocks = [];
-
-    	for (let i = 0; i < each_value.length; i += 1) {
-    		each_blocks[i] = create_each_block$3(get_each_context$3(ctx, each_value, i));
-    	}
-
-    	const block = {
-    		c: function create() {
-    			div = element("div");
-
-    			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].c();
-    			}
-
-    			attr_dev(div, "class", "body svelte-1636480");
-    			add_location(div, file$6, 30, 2, 478);
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-
-    			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(div, null);
-    			}
-    		},
-    		p: function update(ctx, dirty) {
-    			if (dirty & /*options, $activeOptions*/ 10) {
-    				each_value = /*options*/ ctx[3];
-    				validate_each_argument(each_value);
-    				let i;
-
-    				for (i = 0; i < each_value.length; i += 1) {
-    					const child_ctx = get_each_context$3(ctx, each_value, i);
-
-    					if (each_blocks[i]) {
-    						each_blocks[i].p(child_ctx, dirty);
-    					} else {
-    						each_blocks[i] = create_each_block$3(child_ctx);
-    						each_blocks[i].c();
-    						each_blocks[i].m(div, null);
-    					}
-    				}
-
-    				for (; i < each_blocks.length; i += 1) {
-    					each_blocks[i].d(1);
-    				}
-
-    				each_blocks.length = each_value.length;
-    			}
-    		},
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
-    			destroy_each(each_blocks, detaching);
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_if_block$2.name,
-    		type: "if",
-    		source: "(30:0) {#if configIsOpen}",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    // (32:4) {#each options as option}
-    function create_each_block$3(ctx) {
-    	let label;
-    	let input;
-    	let t0;
-    	let t1_value = /*option*/ ctx[6] + "";
-    	let t1;
-    	let t2;
-    	let mounted;
-    	let dispose;
-
-    	const block = {
-    		c: function create() {
-    			label = element("label");
-    			input = element("input");
-    			t0 = space();
-    			t1 = text(t1_value);
-    			t2 = space();
-    			attr_dev(input, "type", "checkbox");
-    			input.__value = /*option*/ ctx[6];
-    			input.value = input.__value;
-    			/*$$binding_groups*/ ctx[5][0].push(input);
-    			add_location(input, file$6, 33, 8, 549);
-    			add_location(label, file$6, 32, 6, 533);
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, label, anchor);
-    			append_dev(label, input);
-    			input.checked = ~/*$activeOptions*/ ctx[1].indexOf(input.__value);
-    			append_dev(label, t0);
-    			append_dev(label, t1);
-    			append_dev(label, t2);
-
-    			if (!mounted) {
-    				dispose = listen_dev(input, "change", /*input_change_handler*/ ctx[4]);
-    				mounted = true;
-    			}
-    		},
-    		p: function update(ctx, dirty) {
-    			if (dirty & /*$activeOptions*/ 2) {
-    				input.checked = ~/*$activeOptions*/ ctx[1].indexOf(input.__value);
-    			}
-    		},
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(label);
-    			/*$$binding_groups*/ ctx[5][0].splice(/*$$binding_groups*/ ctx[5][0].indexOf(input), 1);
-    			mounted = false;
-    			dispose();
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_each_block$3.name,
-    		type: "each",
-    		source: "(32:4) {#each options as option}",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    function create_fragment$6(ctx) {
-    	let div;
-    	let h2;
-    	let t1;
-    	let button;
-    	let t2;
-    	let if_block1_anchor;
-    	let mounted;
-    	let dispose;
-
-    	function select_block_type(ctx, dirty) {
-    		if (/*configIsOpen*/ ctx[0]) return create_if_block_1;
-    		return create_else_block$1;
-    	}
-
-    	let current_block_type = select_block_type(ctx);
-    	let if_block0 = current_block_type(ctx);
-    	let if_block1 = /*configIsOpen*/ ctx[0] && create_if_block$2(ctx);
-
-    	const block = {
-    		c: function create() {
-    			div = element("div");
-    			h2 = element("h2");
-    			h2.textContent = "Config";
-    			t1 = space();
-    			button = element("button");
-    			if_block0.c();
-    			t2 = space();
-    			if (if_block1) if_block1.c();
-    			if_block1_anchor = empty();
-    			attr_dev(h2, "class", "svelte-1636480");
-    			add_location(h2, file$6, 17, 2, 309);
-    			attr_dev(button, "class", "svelte-1636480");
-    			add_location(button, file$6, 18, 2, 329);
-    			attr_dev(div, "class", "head svelte-1636480");
-    			add_location(div, file$6, 16, 0, 288);
-    		},
-    		l: function claim(nodes) {
-    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
-    		},
-    		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, h2);
-    			append_dev(div, t1);
-    			append_dev(div, button);
-    			if_block0.m(button, null);
-    			insert_dev(target, t2, anchor);
-    			if (if_block1) if_block1.m(target, anchor);
-    			insert_dev(target, if_block1_anchor, anchor);
-
-    			if (!mounted) {
-    				dispose = listen_dev(button, "click", /*toggleConfig*/ ctx[2], false, false, false);
-    				mounted = true;
-    			}
-    		},
-    		p: function update(ctx, [dirty]) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
-    				if_block0.d(1);
-    				if_block0 = current_block_type(ctx);
-
-    				if (if_block0) {
-    					if_block0.c();
-    					if_block0.m(button, null);
-    				}
-    			}
-
-    			if (/*configIsOpen*/ ctx[0]) {
-    				if (if_block1) {
-    					if_block1.p(ctx, dirty);
-    				} else {
-    					if_block1 = create_if_block$2(ctx);
-    					if_block1.c();
-    					if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
-    				}
-    			} else if (if_block1) {
-    				if_block1.d(1);
-    				if_block1 = null;
-    			}
-    		},
-    		i: noop,
-    		o: noop,
-    		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
-    			if_block0.d();
-    			if (detaching) detach_dev(t2);
-    			if (if_block1) if_block1.d(detaching);
-    			if (detaching) detach_dev(if_block1_anchor);
-    			mounted = false;
-    			dispose();
-    		}
-    	};
-
-    	dispatch_dev("SvelteRegisterBlock", {
-    		block,
-    		id: create_fragment$6.name,
-    		type: "component",
-    		source: "",
-    		ctx
-    	});
-
-    	return block;
-    }
-
-    function instance$6($$self, $$props, $$invalidate) {
-    	let $activeOptions;
-    	validate_store(activeOptions, 'activeOptions');
-    	component_subscribe($$self, activeOptions, $$value => $$invalidate(1, $activeOptions = $$value));
-    	let { $$slots: slots = {}, $$scope } = $$props;
-    	validate_slots('Config', slots, []);
-    	let configIsOpen = false;
-    	let toggleConfig = () => $$invalidate(0, configIsOpen = !configIsOpen);
-
-    	let options = [
-    		'Tools',
-    		'Supplies',
-    		'Prep Time',
-    		'Perform Time',
-    		'Total Time',
-    		'Sections',
-    		'Estimated Cost'
-    	];
-
-    	const writable_props = [];
-
-    	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Config> was created with unknown prop '${key}'`);
-    	});
-
-    	const $$binding_groups = [[]];
-
-    	function input_change_handler() {
-    		$activeOptions = get_binding_group_value($$binding_groups[0], this.__value, this.checked);
-    		activeOptions.set($activeOptions);
-    	}
-
-    	$$self.$capture_state = () => ({
-    		activeOptions,
-    		configIsOpen,
-    		toggleConfig,
-    		options,
-    		$activeOptions
-    	});
-
-    	$$self.$inject_state = $$props => {
-    		if ('configIsOpen' in $$props) $$invalidate(0, configIsOpen = $$props.configIsOpen);
-    		if ('toggleConfig' in $$props) $$invalidate(2, toggleConfig = $$props.toggleConfig);
-    		if ('options' in $$props) $$invalidate(3, options = $$props.options);
-    	};
-
-    	if ($$props && "$$inject" in $$props) {
-    		$$self.$inject_state($$props.$$inject);
-    	}
-
-    	return [
-    		configIsOpen,
-    		$activeOptions,
-    		toggleConfig,
-    		options,
-    		input_change_handler,
-    		$$binding_groups
-    	];
-    }
-
-    class Config extends SvelteComponentDev {
-    	constructor(options) {
-    		super(options);
     		init(this, options, instance$6, create_fragment$6, safe_not_equal, {});
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
-    			tagName: "Config",
+    			tagName: "CodeBlock",
     			options,
     			id: create_fragment$6.name
     		});
@@ -3300,7 +2953,7 @@ ${JSON.stringify(
 
     /* src/StepChild.svelte generated by Svelte v3.44.0 */
 
-    const { console: console_1$2 } = globals;
+    const { console: console_1$1 } = globals;
     const file$5 = "src/StepChild.svelte";
 
     // (51:2) {#if hasImage}
@@ -3528,7 +3181,7 @@ ${JSON.stringify(
     	const writable_props = ['child'];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$2.warn(`<StepChild> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<StepChild> was created with unknown prop '${key}'`);
     	});
 
     	function select_change_handler() {
@@ -3587,7 +3240,7 @@ ${JSON.stringify(
     		const props = options.props || {};
 
     		if (/*child*/ ctx[0] === undefined && !('child' in props)) {
-    			console_1$2.warn("<StepChild> was created without expected prop 'child'");
+    			console_1$1.warn("<StepChild> was created without expected prop 'child'");
     		}
     	}
 
@@ -3605,49 +3258,38 @@ ${JSON.stringify(
 
     function get_each_context$2(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[2] = list[i];
-    	child_ctx[3] = list;
-    	child_ctx[4] = i;
+    	child_ctx[3] = list[i];
     	return child_ctx;
     }
 
-    // (8:2) {#each step.children as child}
-    function create_each_block$2(ctx) {
+    // (28:4) {#each step.children as child(child.id)}
+    function create_each_block$2(key_1, ctx) {
+    	let first;
     	let stepchild;
-    	let updating_child;
     	let current;
 
-    	function stepchild_child_binding(value) {
-    		/*stepchild_child_binding*/ ctx[1](value, /*child*/ ctx[2], /*each_value*/ ctx[3], /*child_index*/ ctx[4]);
-    	}
-
-    	let stepchild_props = {};
-
-    	if (/*child*/ ctx[2] !== void 0) {
-    		stepchild_props.child = /*child*/ ctx[2];
-    	}
-
-    	stepchild = new StepChild({ props: stepchild_props, $$inline: true });
-    	binding_callbacks.push(() => bind(stepchild, 'child', stepchild_child_binding));
+    	stepchild = new StepChild({
+    			props: { child: /*child*/ ctx[3] },
+    			$$inline: true
+    		});
 
     	const block = {
+    		key: key_1,
+    		first: null,
     		c: function create() {
+    			first = empty();
     			create_component(stepchild.$$.fragment);
+    			this.first = first;
     		},
     		m: function mount(target, anchor) {
+    			insert_dev(target, first, anchor);
     			mount_component(stepchild, target, anchor);
     			current = true;
     		},
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
     			const stepchild_changes = {};
-
-    			if (!updating_child && dirty & /*step*/ 1) {
-    				updating_child = true;
-    				stepchild_changes.child = /*child*/ ctx[2];
-    				add_flush_callback(() => updating_child = false);
-    			}
-
+    			if (dirty & /*step*/ 1) stepchild_changes.child = /*child*/ ctx[3];
     			stepchild.$set(stepchild_changes);
     		},
     		i: function intro(local) {
@@ -3660,6 +3302,7 @@ ${JSON.stringify(
     			current = false;
     		},
     		d: function destroy(detaching) {
+    			if (detaching) detach_dev(first);
     			destroy_component(stepchild, detaching);
     		}
     	};
@@ -3668,7 +3311,7 @@ ${JSON.stringify(
     		block,
     		id: create_each_block$2.name,
     		type: "each",
-    		source: "(8:2) {#each step.children as child}",
+    		source: "(28:4) {#each step.children as child(child.id)}",
     		ctx
     	});
 
@@ -3676,80 +3319,89 @@ ${JSON.stringify(
     }
 
     function create_fragment$4(ctx) {
-    	let div;
+    	let div1;
     	let p;
     	let t1;
+    	let div0;
+    	let each_blocks = [];
+    	let each_1_lookup = new Map();
+    	let dndzone_action;
     	let current;
+    	let mounted;
+    	let dispose;
     	let each_value = /*step*/ ctx[0].children;
     	validate_each_argument(each_value);
-    	let each_blocks = [];
+    	const get_key = ctx => /*child*/ ctx[3].id;
+    	validate_each_keys(ctx, each_value, get_each_context$2, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
-    		each_blocks[i] = create_each_block$2(get_each_context$2(ctx, each_value, i));
+    		let child_ctx = get_each_context$2(ctx, each_value, i);
+    		let key = get_key(child_ctx);
+    		each_1_lookup.set(key, each_blocks[i] = create_each_block$2(key, child_ctx));
     	}
-
-    	const out = i => transition_out(each_blocks[i], 1, 1, () => {
-    		each_blocks[i] = null;
-    	});
 
     	const block = {
     		c: function create() {
-    			div = element("div");
+    			div1 = element("div");
     			p = element("p");
     			p.textContent = "≡ Step:";
     			t1 = space();
+    			div0 = element("div");
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				each_blocks[i].c();
     			}
 
-    			attr_dev(p, "class", "svelte-55di6o");
-    			add_location(p, file$4, 6, 2, 110);
-    			attr_dev(div, "class", "step-group svelte-55di6o");
-    			add_location(div, file$4, 5, 0, 83);
+    			attr_dev(p, "class", "svelte-1pudmpo");
+    			add_location(p, file$4, 18, 2, 375);
+    			add_location(div0, file$4, 19, 2, 392);
+    			attr_dev(div1, "class", "step-group svelte-1pudmpo");
+    			add_location(div1, file$4, 17, 0, 348);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
     		},
     		m: function mount(target, anchor) {
-    			insert_dev(target, div, anchor);
-    			append_dev(div, p);
-    			append_dev(div, t1);
+    			insert_dev(target, div1, anchor);
+    			append_dev(div1, p);
+    			append_dev(div1, t1);
+    			append_dev(div1, div0);
 
     			for (let i = 0; i < each_blocks.length; i += 1) {
-    				each_blocks[i].m(div, null);
+    				each_blocks[i].m(div0, null);
     			}
 
     			current = true;
+
+    			if (!mounted) {
+    				dispose = [
+    					action_destroyer(dndzone_action = dndzone.call(null, div0, {
+    						items: /*step*/ ctx[0].children,
+    						flipDurationMs: flipDurationMs$2,
+    						dropFromOthersDisabled: true
+    					})),
+    					listen_dev(div0, "consider", /*handleDndConsider*/ ctx[1], false, false, false),
+    					listen_dev(div0, "finalize", /*handleDndFinalize*/ ctx[2], false, false, false)
+    				];
+
+    				mounted = true;
+    			}
     		},
     		p: function update(ctx, [dirty]) {
     			if (dirty & /*step*/ 1) {
     				each_value = /*step*/ ctx[0].children;
     				validate_each_argument(each_value);
-    				let i;
-
-    				for (i = 0; i < each_value.length; i += 1) {
-    					const child_ctx = get_each_context$2(ctx, each_value, i);
-
-    					if (each_blocks[i]) {
-    						each_blocks[i].p(child_ctx, dirty);
-    						transition_in(each_blocks[i], 1);
-    					} else {
-    						each_blocks[i] = create_each_block$2(child_ctx);
-    						each_blocks[i].c();
-    						transition_in(each_blocks[i], 1);
-    						each_blocks[i].m(div, null);
-    					}
-    				}
-
     				group_outros();
-
-    				for (i = each_value.length; i < each_blocks.length; i += 1) {
-    					out(i);
-    				}
-
+    				validate_each_keys(ctx, each_value, get_each_context$2, get_key);
+    				each_blocks = update_keyed_each(each_blocks, dirty, get_key, 1, ctx, each_value, each_1_lookup, div0, outro_and_destroy_block, create_each_block$2, null, get_each_context$2);
     				check_outros();
     			}
+
+    			if (dndzone_action && is_function(dndzone_action.update) && dirty & /*step*/ 1) dndzone_action.update.call(null, {
+    				items: /*step*/ ctx[0].children,
+    				flipDurationMs: flipDurationMs$2,
+    				dropFromOthersDisabled: true
+    			});
     		},
     		i: function intro(local) {
     			if (current) return;
@@ -3761,8 +3413,6 @@ ${JSON.stringify(
     			current = true;
     		},
     		o: function outro(local) {
-    			each_blocks = each_blocks.filter(Boolean);
-
     			for (let i = 0; i < each_blocks.length; i += 1) {
     				transition_out(each_blocks[i]);
     			}
@@ -3770,8 +3420,14 @@ ${JSON.stringify(
     			current = false;
     		},
     		d: function destroy(detaching) {
-    			if (detaching) detach_dev(div);
-    			destroy_each(each_blocks, detaching);
+    			if (detaching) detach_dev(div1);
+
+    			for (let i = 0; i < each_blocks.length; i += 1) {
+    				each_blocks[i].d();
+    			}
+
+    			mounted = false;
+    			run_all(dispose);
     		}
     	};
 
@@ -3786,26 +3442,40 @@ ${JSON.stringify(
     	return block;
     }
 
+    const flipDurationMs$2 = 300;
+
     function instance$4($$self, $$props, $$invalidate) {
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('StepGroup', slots, []);
     	let { step } = $$props;
+
+    	function handleDndConsider(e) {
+    		$$invalidate(0, step.children = e.detail.items, step);
+    	}
+
+    	function handleDndFinalize(e) {
+    		$$invalidate(0, step.children = e.detail.items, step);
+    	}
+
     	const writable_props = ['step'];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<StepGroup> was created with unknown prop '${key}'`);
     	});
 
-    	function stepchild_child_binding(value, child, each_value, child_index) {
-    		each_value[child_index] = value;
-    		$$invalidate(0, step);
-    	}
-
     	$$self.$$set = $$props => {
     		if ('step' in $$props) $$invalidate(0, step = $$props.step);
     	};
 
-    	$$self.$capture_state = () => ({ StepChild, step });
+    	$$self.$capture_state = () => ({
+    		flip,
+    		dndzone,
+    		StepChild,
+    		step,
+    		flipDurationMs: flipDurationMs$2,
+    		handleDndConsider,
+    		handleDndFinalize
+    	});
 
     	$$self.$inject_state = $$props => {
     		if ('step' in $$props) $$invalidate(0, step = $$props.step);
@@ -3815,7 +3485,7 @@ ${JSON.stringify(
     		$$self.$inject_state($$props.$$inject);
     	}
 
-    	return [step, stepchild_child_binding];
+    	return [step, handleDndConsider, handleDndFinalize];
     }
 
     class StepGroup extends SvelteComponentDev {
@@ -3852,13 +3522,13 @@ ${JSON.stringify(
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[4] = list[i];
-    	child_ctx[5] = list;
-    	child_ctx[6] = i;
+    	child_ctx[6] = list[i];
+    	child_ctx[7] = list;
+    	child_ctx[8] = i;
     	return child_ctx;
     }
 
-    // (26:2) {#each $steps as step(step.id)}
+    // (43:2) {#each array as step(step.id)}
     function create_each_block$1(key_1, ctx) {
     	let div;
     	let stepgroup;
@@ -3869,13 +3539,13 @@ ${JSON.stringify(
     	let current;
 
     	function stepgroup_step_binding(value) {
-    		/*stepgroup_step_binding*/ ctx[3](value, /*step*/ ctx[4], /*each_value*/ ctx[5], /*step_index*/ ctx[6]);
+    		/*stepgroup_step_binding*/ ctx[4](value, /*step*/ ctx[6], /*each_value*/ ctx[7], /*step_index*/ ctx[8]);
     	}
 
     	let stepgroup_props = {};
 
-    	if (/*step*/ ctx[4] !== void 0) {
-    		stepgroup_props.step = /*step*/ ctx[4];
+    	if (/*step*/ ctx[6] !== void 0) {
+    		stepgroup_props.step = /*step*/ ctx[6];
     	}
 
     	stepgroup = new StepGroup({ props: stepgroup_props, $$inline: true });
@@ -3889,7 +3559,7 @@ ${JSON.stringify(
     			create_component(stepgroup.$$.fragment);
     			t = space();
     			attr_dev(div, "class", "draggable svelte-1hhmo8r");
-    			add_location(div, file$3, 26, 4, 528);
+    			add_location(div, file$3, 43, 4, 800);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -3902,9 +3572,9 @@ ${JSON.stringify(
     			ctx = new_ctx;
     			const stepgroup_changes = {};
 
-    			if (!updating_step && dirty & /*$steps*/ 1) {
+    			if (!updating_step && dirty & /*array*/ 1) {
     				updating_step = true;
-    				stepgroup_changes.step = /*step*/ ctx[4];
+    				stepgroup_changes.step = /*step*/ ctx[6];
     				add_flush_callback(() => updating_step = false);
     			}
 
@@ -3940,7 +3610,7 @@ ${JSON.stringify(
     		block,
     		id: create_each_block$1.name,
     		type: "each",
-    		source: "(26:2) {#each $steps as step(step.id)}",
+    		source: "(43:2) {#each array as step(step.id)}",
     		ctx
     	});
 
@@ -3955,9 +3625,9 @@ ${JSON.stringify(
     	let current;
     	let mounted;
     	let dispose;
-    	let each_value = /*$steps*/ ctx[0];
+    	let each_value = /*array*/ ctx[0];
     	validate_each_argument(each_value);
-    	const get_key = ctx => /*step*/ ctx[4].id;
+    	const get_key = ctx => /*step*/ ctx[6].id;
     	validate_each_keys(ctx, each_value, get_each_context$1, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
@@ -3974,7 +3644,7 @@ ${JSON.stringify(
     				each_blocks[i].c();
     			}
 
-    			add_location(div, file$3, 20, 0, 361);
+    			add_location(div, file$3, 33, 0, 589);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -3990,7 +3660,11 @@ ${JSON.stringify(
 
     			if (!mounted) {
     				dispose = [
-    					action_destroyer(dndzone_action = dndzone.call(null, div, { items: /*$steps*/ ctx[0], flipDurationMs: flipDurationMs$1 })),
+    					action_destroyer(dndzone_action = dndzone.call(null, div, {
+    						items: /*array*/ ctx[0],
+    						flipDurationMs: flipDurationMs$1,
+    						dropFromOthersDisabled: true
+    					})),
     					listen_dev(div, "consider", /*handleDndConsider*/ ctx[1], false, false, false),
     					listen_dev(div, "finalize", /*handleDndFinalize*/ ctx[2], false, false, false)
     				];
@@ -3999,8 +3673,8 @@ ${JSON.stringify(
     			}
     		},
     		p: function update(ctx, [dirty]) {
-    			if (dirty & /*$steps*/ 1) {
-    				each_value = /*$steps*/ ctx[0];
+    			if (dirty & /*array*/ 1) {
+    				each_value = /*array*/ ctx[0];
     				validate_each_argument(each_value);
     				group_outros();
     				for (let i = 0; i < each_blocks.length; i += 1) each_blocks[i].r();
@@ -4010,7 +3684,11 @@ ${JSON.stringify(
     				check_outros();
     			}
 
-    			if (dndzone_action && is_function(dndzone_action.update) && dirty & /*$steps*/ 1) dndzone_action.update.call(null, { items: /*$steps*/ ctx[0], flipDurationMs: flipDurationMs$1 });
+    			if (dndzone_action && is_function(dndzone_action.update) && dirty & /*array*/ 1) dndzone_action.update.call(null, {
+    				items: /*array*/ ctx[0],
+    				flipDurationMs: flipDurationMs$1,
+    				dropFromOthersDisabled: true
+    			});
     		},
     		i: function intro(local) {
     			if (current) return;
@@ -4056,19 +3734,25 @@ ${JSON.stringify(
     function instance$3($$self, $$props, $$invalidate) {
     	let $steps;
     	validate_store(steps, 'steps');
-    	component_subscribe($$self, steps, $$value => $$invalidate(0, $steps = $$value));
+    	component_subscribe($$self, steps, $$value => $$invalidate(5, $steps = $$value));
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('Steps', slots, []);
+    	let { sectionSteps } = $$props;
+    	let array = sectionSteps ? sectionSteps : $steps;
 
     	function handleDndConsider(e) {
-    		set_store_value(steps, $steps = e.detail.items, $steps);
+    		$$invalidate(0, array = e.detail.items);
     	}
 
     	function handleDndFinalize(e) {
-    		set_store_value(steps, $steps = e.detail.items, $steps);
+    		$$invalidate(0, array = e.detail.items);
+
+    		sectionSteps
+    		? $$invalidate(3, sectionSteps = array)
+    		: set_store_value(steps, $steps = array, $steps);
     	}
 
-    	const writable_props = [];
+    	const writable_props = ['sectionSteps'];
 
     	Object.keys($$props).forEach(key => {
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Steps> was created with unknown prop '${key}'`);
@@ -4076,27 +3760,58 @@ ${JSON.stringify(
 
     	function stepgroup_step_binding(value, step, each_value, step_index) {
     		each_value[step_index] = value;
-    		steps.set($steps);
+    		$$invalidate(0, array);
     	}
+
+    	$$self.$$set = $$props => {
+    		if ('sectionSteps' in $$props) $$invalidate(3, sectionSteps = $$props.sectionSteps);
+    	};
 
     	$$self.$capture_state = () => ({
     		flip,
     		dndzone,
     		steps,
     		StepGroup,
+    		sectionSteps,
+    		array,
     		flipDurationMs: flipDurationMs$1,
     		handleDndConsider,
     		handleDndFinalize,
     		$steps
     	});
 
-    	return [$steps, handleDndConsider, handleDndFinalize, stepgroup_step_binding];
+    	$$self.$inject_state = $$props => {
+    		if ('sectionSteps' in $$props) $$invalidate(3, sectionSteps = $$props.sectionSteps);
+    		if ('array' in $$props) $$invalidate(0, array = $$props.array);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	$$self.$$.update = () => {
+    		if ($$self.$$.dirty & /*sectionSteps, array*/ 9) {
+    			{
+    				sectionSteps
+    				? $$invalidate(3, sectionSteps = array)
+    				: set_store_value(steps, $steps = array, $steps);
+    			}
+    		}
+    	};
+
+    	return [
+    		array,
+    		handleDndConsider,
+    		handleDndFinalize,
+    		sectionSteps,
+    		stepgroup_step_binding
+    	];
     }
 
     class Steps extends SvelteComponentDev {
     	constructor(options) {
     		super(options);
-    		init(this, options, instance$3, create_fragment$3, safe_not_equal, {});
+    		init(this, options, instance$3, create_fragment$3, safe_not_equal, { sectionSteps: 3 });
 
     		dispatch_dev("SvelteRegisterComponent", {
     			component: this,
@@ -4104,23 +3819,36 @@ ${JSON.stringify(
     			options,
     			id: create_fragment$3.name
     		});
+
+    		const { ctx } = this.$$;
+    		const props = options.props || {};
+
+    		if (/*sectionSteps*/ ctx[3] === undefined && !('sectionSteps' in props)) {
+    			console.warn("<Steps> was created without expected prop 'sectionSteps'");
+    		}
+    	}
+
+    	get sectionSteps() {
+    		throw new Error("<Steps>: Props cannot be read directly from the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
+    	}
+
+    	set sectionSteps(value) {
+    		throw new Error("<Steps>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
 
     /* src/Sections.svelte generated by Svelte v3.44.0 */
-
-    const { console: console_1$1 } = globals;
     const file$2 = "src/Sections.svelte";
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = ctx.slice();
-    	child_ctx[4] = list[i];
-    	child_ctx[5] = list;
-    	child_ctx[6] = i;
+    	child_ctx[5] = list[i];
+    	child_ctx[6] = list;
+    	child_ctx[7] = i;
     	return child_ctx;
     }
 
-    // (28:2) {#each $sections as section(section.id)}
+    // (31:2) {#each $sections as section(section.id)}
     function create_each_block(key_1, ctx) {
     	let div;
     	let label;
@@ -4128,6 +3856,7 @@ ${JSON.stringify(
     	let input;
     	let t1;
     	let steps;
+    	let updating_sectionSteps;
     	let t2;
     	let rect;
     	let stop_animation = noop;
@@ -4136,10 +3865,21 @@ ${JSON.stringify(
     	let dispose;
 
     	function input_input_handler() {
-    		/*input_input_handler*/ ctx[3].call(input, /*each_value*/ ctx[5], /*section_index*/ ctx[6]);
+    		/*input_input_handler*/ ctx[3].call(input, /*each_value*/ ctx[6], /*section_index*/ ctx[7]);
     	}
 
-    	steps = new Steps({ $$inline: true });
+    	function steps_sectionSteps_binding(value) {
+    		/*steps_sectionSteps_binding*/ ctx[4](value, /*section*/ ctx[5]);
+    	}
+
+    	let steps_props = {};
+
+    	if (/*section*/ ctx[5].steps !== void 0) {
+    		steps_props.sectionSteps = /*section*/ ctx[5].steps;
+    	}
+
+    	steps = new Steps({ props: steps_props, $$inline: true });
+    	binding_callbacks.push(() => bind(steps, 'sectionSteps', steps_sectionSteps_binding));
 
     	const block = {
     		key: key_1,
@@ -4155,11 +3895,11 @@ ${JSON.stringify(
     			attr_dev(input, "type", "text");
     			attr_dev(input, "name", "sectionName");
     			attr_dev(input, "class", "svelte-flfmj5");
-    			add_location(input, file$2, 34, 8, 705);
+    			add_location(input, file$2, 37, 8, 727);
     			attr_dev(label, "class", "svelte-flfmj5");
-    			add_location(label, file$2, 32, 6, 665);
+    			add_location(label, file$2, 35, 6, 687);
     			attr_dev(div, "class", "section draggable svelte-flfmj5");
-    			add_location(div, file$2, 28, 4, 566);
+    			add_location(div, file$2, 31, 4, 588);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -4167,7 +3907,7 @@ ${JSON.stringify(
     			append_dev(div, label);
     			append_dev(label, t0);
     			append_dev(label, input);
-    			set_input_value(input, /*section*/ ctx[4].name);
+    			set_input_value(input, /*section*/ ctx[5].name);
     			append_dev(div, t1);
     			mount_component(steps, div, null);
     			append_dev(div, t2);
@@ -4181,9 +3921,19 @@ ${JSON.stringify(
     		p: function update(new_ctx, dirty) {
     			ctx = new_ctx;
 
-    			if (dirty & /*$sections*/ 1 && input.value !== /*section*/ ctx[4].name) {
-    				set_input_value(input, /*section*/ ctx[4].name);
+    			if (dirty & /*$sections*/ 1 && input.value !== /*section*/ ctx[5].name) {
+    				set_input_value(input, /*section*/ ctx[5].name);
     			}
+
+    			const steps_changes = {};
+
+    			if (!updating_sectionSteps && dirty & /*$sections*/ 1) {
+    				updating_sectionSteps = true;
+    				steps_changes.sectionSteps = /*section*/ ctx[5].steps;
+    				add_flush_callback(() => updating_sectionSteps = false);
+    			}
+
+    			steps.$set(steps_changes);
     		},
     		r: function measure() {
     			rect = div.getBoundingClientRect();
@@ -4217,7 +3967,7 @@ ${JSON.stringify(
     		block,
     		id: create_each_block.name,
     		type: "each",
-    		source: "(28:2) {#each $sections as section(section.id)}",
+    		source: "(31:2) {#each $sections as section(section.id)}",
     		ctx
     	});
 
@@ -4234,7 +3984,7 @@ ${JSON.stringify(
     	let dispose;
     	let each_value = /*$sections*/ ctx[0];
     	validate_each_argument(each_value);
-    	const get_key = ctx => /*section*/ ctx[4].id;
+    	const get_key = ctx => /*section*/ ctx[5].id;
     	validate_each_keys(ctx, each_value, get_each_context, get_key);
 
     	for (let i = 0; i < each_value.length; i += 1) {
@@ -4251,7 +4001,7 @@ ${JSON.stringify(
     				each_blocks[i].c();
     			}
 
-    			add_location(div, file$2, 22, 0, 387);
+    			add_location(div, file$2, 21, 0, 363);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4269,7 +4019,8 @@ ${JSON.stringify(
     				dispose = [
     					action_destroyer(dndzone_action = dndzone.call(null, div, {
     						items: /*$sections*/ ctx[0],
-    						flipDurationMs
+    						flipDurationMs,
+    						dropFromOthersDisabled: true
     					})),
     					listen_dev(div, "consider", /*handleDndConsider*/ ctx[1], false, false, false),
     					listen_dev(div, "finalize", /*handleDndFinalize*/ ctx[2], false, false, false)
@@ -4292,7 +4043,8 @@ ${JSON.stringify(
 
     			if (dndzone_action && is_function(dndzone_action.update) && dirty & /*$sections*/ 1) dndzone_action.update.call(null, {
     				items: /*$sections*/ ctx[0],
-    				flipDurationMs
+    				flipDurationMs,
+    				dropFromOthersDisabled: true
     			});
     		},
     		i: function intro(local) {
@@ -4351,16 +4103,22 @@ ${JSON.stringify(
     		set_store_value(sections, $sections = e.detail.items, $sections);
     	}
 
-    	console.log(sections);
     	const writable_props = [];
 
     	Object.keys($$props).forEach(key => {
-    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$1.warn(`<Sections> was created with unknown prop '${key}'`);
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<Sections> was created with unknown prop '${key}'`);
     	});
 
     	function input_input_handler(each_value, section_index) {
     		each_value[section_index].name = this.value;
     		sections.set($sections);
+    	}
+
+    	function steps_sectionSteps_binding(value, section) {
+    		if ($$self.$$.not_equal(section.steps, value)) {
+    			section.steps = value;
+    			sections.set($sections);
+    		}
     	}
 
     	$$self.$capture_state = () => ({
@@ -4374,7 +4132,13 @@ ${JSON.stringify(
     		$sections
     	});
 
-    	return [$sections, handleDndConsider, handleDndFinalize, input_input_handler];
+    	return [
+    		$sections,
+    		handleDndConsider,
+    		handleDndFinalize,
+    		input_input_handler,
+    		steps_sectionSteps_binding
+    	];
     }
 
     class Sections extends SvelteComponentDev {
@@ -4786,7 +4550,7 @@ ${JSON.stringify(
     		dndzone,
     		name,
     		description,
-    		activeOptions: activeOptions$1,
+    		activeOptions,
     		estimatedCostNumber,
     		estimatedCostUnit,
     		prepTime,
@@ -4876,13 +4640,13 @@ ${JSON.stringify(
     			t2 = space();
     			section1 = element("section");
     			create_component(codeblock.$$.fragment);
-    			add_location(h1, file, 7, 1, 158);
+    			add_location(h1, file, 10, 1, 200);
     			attr_dev(header, "class", "svelte-v9qetw");
-    			add_location(header, file, 6, 0, 148);
-    			add_location(section0, file, 11, 1, 206);
-    			add_location(section1, file, 15, 1, 268);
+    			add_location(header, file, 9, 0, 190);
+    			add_location(section0, file, 14, 1, 248);
+    			add_location(section1, file, 17, 1, 288);
     			attr_dev(main, "class", "svelte-v9qetw");
-    			add_location(main, file, 10, 0, 198);
+    			add_location(main, file, 13, 0, 240);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4940,7 +4704,7 @@ ${JSON.stringify(
     		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console.warn(`<App> was created with unknown prop '${key}'`);
     	});
 
-    	$$self.$capture_state = () => ({ CodeBlock, Config, SchemaForm });
+    	$$self.$capture_state = () => ({ writable, get: get_store_value, CodeBlock, SchemaForm });
     	return [];
     }
 

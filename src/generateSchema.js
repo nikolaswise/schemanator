@@ -7,8 +7,42 @@ import {
   totalTime,
   tools,
   supplies,
-  steps
+  steps,
+  sections,
 } from './data.js'
+
+// Accepts array of two values,
+// returns true if the second value is falsey
+const isNullOrEmpty = ([key, val]) => {
+  // return !val
+  if (!val) {
+    return true
+  } else {
+    return val.length > 0
+      ? false
+      : true
+  }
+}
+
+// Accepts array
+// returns the first item of that array
+// lol is this just pop()
+const getFirstInArray = (arr) => arr[0]
+
+// Accepts an object
+// Removes all falsey keys from object
+// Returns cleaned object
+const stripNullValues = (obj) => {
+  let emptyKeys = Object
+    .entries(obj)
+    .filter(isNullOrEmpty)
+    .map(getFirstInArray)
+  emptyKeys.forEach(key => {
+    delete obj[key]
+  })
+  return obj
+}
+
 
 // Accepts a step array, as desribed above
 // Return a HowToStep object
@@ -17,12 +51,12 @@ const mapSteps = (arr) => arr.map((step, i) => {
     "@type": "HowToStep",
     "position": `${i + 1}`,
     "itemListElement": step.children.map((dir, i) => {
-      return {
+      return stripNullValues({
         "@type": dir.type,
         "position": `${i + 1}`,
         "text": dir.text,
         "image": dir.image
-      }
+      })
     })
   }
 })
@@ -52,11 +86,11 @@ const renderSteps = (arr) => {
 //   Accepts an array of strings
 //   Returns a HowToTools array
 const mapDependencies = (type) => (arr) => arr.map(({name, image}) => {
-  return {
+  return stripNullValues({
     "@type": type,
     name,
     image
-  }
+  })
 })
 
 // Put it all together and output a JSON-LD blob
@@ -69,8 +103,9 @@ export const generateSchema = ({
   tools,
   supplies,
   steps,
+  sections,
 }) => {
-  return {
+  return stripNullValues({
     "@context": "https://schema.org",
     "@type": "HowTo",
     name,
@@ -80,6 +115,6 @@ export const generateSchema = ({
     totalTime,
     // tool: mapDependencies('HowToTool')(tools),
     // supply: mapDependencies('HowToSupply')(supplies),
-    "step": renderSteps(steps)
-  }
+    "step": mapSections(sections)
+  })
 }
