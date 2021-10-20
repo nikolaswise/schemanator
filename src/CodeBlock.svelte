@@ -14,6 +14,7 @@
   } from './data.js'
 
   import { generateSchema } from './generateSchema.js'
+  import ImportSchema from './ImportSchema.svelte'
 
   let snippet
   $: {
@@ -65,6 +66,9 @@ ${JSON.stringify(generateSchema({
   {snippet}
   </code></pre>
 </div>
+
+<ImportSchema />
+
 
 <style>
   div {

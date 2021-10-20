@@ -924,10 +924,1220 @@ var app = (function () {
       })
     };
 
+    // Unique ID creation requires a high quality random # generator. In the browser we therefore
+    // require the crypto API and do not support built-in fallback to lower quality random number
+    // generators (like Math.random()).
+    var getRandomValues;
+    var rnds8 = new Uint8Array(16);
+    function rng() {
+      // lazy load so that environments that need to polyfill have a chance to do so
+      if (!getRandomValues) {
+        // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
+        // find the complete implementation of crypto (msCrypto) on IE11.
+        getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== 'undefined' && typeof msCrypto.getRandomValues === 'function' && msCrypto.getRandomValues.bind(msCrypto);
+
+        if (!getRandomValues) {
+          throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
+        }
+      }
+
+      return getRandomValues(rnds8);
+    }
+
+    var REGEX = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
+
+    function validate(uuid) {
+      return typeof uuid === 'string' && REGEX.test(uuid);
+    }
+
+    /**
+     * Convert array of 16 byte values to UUID string format of the form:
+     * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+     */
+
+    var byteToHex = [];
+
+    for (var i = 0; i < 256; ++i) {
+      byteToHex.push((i + 0x100).toString(16).substr(1));
+    }
+
+    function stringify(arr) {
+      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+      // Note: Be careful editing this code!  It's been tuned for performance
+      // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
+      var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
+      // of the following:
+      // - One or more input array values don't map to a hex octet (leading to
+      // "undefined" in the uuid)
+      // - Invalid input values for the RFC `version` or `variant` fields
+
+      if (!validate(uuid)) {
+        throw TypeError('Stringified UUID is invalid');
+      }
+
+      return uuid;
+    }
+
+    //
+    // Inspired by https://github.com/LiosK/UUID.js
+    // and http://docs.python.org/library/uuid.html
+
+    var _nodeId;
+
+    var _clockseq; // Previous uuid creation time
+
+
+    var _lastMSecs = 0;
+    var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
+
+    function v1(options, buf, offset) {
+      var i = buf && offset || 0;
+      var b = buf || new Array(16);
+      options = options || {};
+      var node = options.node || _nodeId;
+      var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
+      // specified.  We do this lazily to minimize issues related to insufficient
+      // system entropy.  See #189
+
+      if (node == null || clockseq == null) {
+        var seedBytes = options.random || (options.rng || rng)();
+
+        if (node == null) {
+          // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
+          node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
+        }
+
+        if (clockseq == null) {
+          // Per 4.2.2, randomize (14 bit) clockseq
+          clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
+        }
+      } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
+      // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
+      // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
+      // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
+
+
+      var msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
+      // cycle to simulate higher resolution clock
+
+      var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
+
+      var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
+
+      if (dt < 0 && options.clockseq === undefined) {
+        clockseq = clockseq + 1 & 0x3fff;
+      } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
+      // time interval
+
+
+      if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+        nsecs = 0;
+      } // Per 4.2.1.2 Throw error if too many uuids are requested
+
+
+      if (nsecs >= 10000) {
+        throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
+      }
+
+      _lastMSecs = msecs;
+      _lastNSecs = nsecs;
+      _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
+
+      msecs += 12219292800000; // `time_low`
+
+      var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+      b[i++] = tl >>> 24 & 0xff;
+      b[i++] = tl >>> 16 & 0xff;
+      b[i++] = tl >>> 8 & 0xff;
+      b[i++] = tl & 0xff; // `time_mid`
+
+      var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
+      b[i++] = tmh >>> 8 & 0xff;
+      b[i++] = tmh & 0xff; // `time_high_and_version`
+
+      b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
+
+      b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
+
+      b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
+
+      b[i++] = clockseq & 0xff; // `node`
+
+      for (var n = 0; n < 6; ++n) {
+        b[i + n] = node[n];
+      }
+
+      return buf || stringify(b);
+    }
+
+    function parse(uuid) {
+      if (!validate(uuid)) {
+        throw TypeError('Invalid UUID');
+      }
+
+      var v;
+      var arr = new Uint8Array(16); // Parse ########-....-....-....-............
+
+      arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
+      arr[1] = v >>> 16 & 0xff;
+      arr[2] = v >>> 8 & 0xff;
+      arr[3] = v & 0xff; // Parse ........-####-....-....-............
+
+      arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
+      arr[5] = v & 0xff; // Parse ........-....-####-....-............
+
+      arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
+      arr[7] = v & 0xff; // Parse ........-....-....-####-............
+
+      arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
+      arr[9] = v & 0xff; // Parse ........-....-....-....-############
+      // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
+
+      arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000 & 0xff;
+      arr[11] = v / 0x100000000 & 0xff;
+      arr[12] = v >>> 24 & 0xff;
+      arr[13] = v >>> 16 & 0xff;
+      arr[14] = v >>> 8 & 0xff;
+      arr[15] = v & 0xff;
+      return arr;
+    }
+
+    function stringToBytes(str) {
+      str = unescape(encodeURIComponent(str)); // UTF8 escape
+
+      var bytes = [];
+
+      for (var i = 0; i < str.length; ++i) {
+        bytes.push(str.charCodeAt(i));
+      }
+
+      return bytes;
+    }
+
+    var DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
+    var URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
+    function v35 (name, version, hashfunc) {
+      function generateUUID(value, namespace, buf, offset) {
+        if (typeof value === 'string') {
+          value = stringToBytes(value);
+        }
+
+        if (typeof namespace === 'string') {
+          namespace = parse(namespace);
+        }
+
+        if (namespace.length !== 16) {
+          throw TypeError('Namespace must be array-like (16 iterable integer values, 0-255)');
+        } // Compute hash of namespace and value, Per 4.3
+        // Future: Use spread syntax when supported on all platforms, e.g. `bytes =
+        // hashfunc([...namespace, ... value])`
+
+
+        var bytes = new Uint8Array(16 + value.length);
+        bytes.set(namespace);
+        bytes.set(value, namespace.length);
+        bytes = hashfunc(bytes);
+        bytes[6] = bytes[6] & 0x0f | version;
+        bytes[8] = bytes[8] & 0x3f | 0x80;
+
+        if (buf) {
+          offset = offset || 0;
+
+          for (var i = 0; i < 16; ++i) {
+            buf[offset + i] = bytes[i];
+          }
+
+          return buf;
+        }
+
+        return stringify(bytes);
+      } // Function#name is not settable on some platforms (#270)
+
+
+      try {
+        generateUUID.name = name; // eslint-disable-next-line no-empty
+      } catch (err) {} // For CommonJS default export support
+
+
+      generateUUID.DNS = DNS;
+      generateUUID.URL = URL;
+      return generateUUID;
+    }
+
+    /*
+     * Browser-compatible JavaScript MD5
+     *
+     * Modification of JavaScript MD5
+     * https://github.com/blueimp/JavaScript-MD5
+     *
+     * Copyright 2011, Sebastian Tschan
+     * https://blueimp.net
+     *
+     * Licensed under the MIT license:
+     * https://opensource.org/licenses/MIT
+     *
+     * Based on
+     * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+     * Digest Algorithm, as defined in RFC 1321.
+     * Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
+     * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+     * Distributed under the BSD License
+     * See http://pajhome.org.uk/crypt/md5 for more info.
+     */
+    function md5(bytes) {
+      if (typeof bytes === 'string') {
+        var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
+
+        bytes = new Uint8Array(msg.length);
+
+        for (var i = 0; i < msg.length; ++i) {
+          bytes[i] = msg.charCodeAt(i);
+        }
+      }
+
+      return md5ToHexEncodedArray(wordsToMd5(bytesToWords(bytes), bytes.length * 8));
+    }
+    /*
+     * Convert an array of little-endian words to an array of bytes
+     */
+
+
+    function md5ToHexEncodedArray(input) {
+      var output = [];
+      var length32 = input.length * 32;
+      var hexTab = '0123456789abcdef';
+
+      for (var i = 0; i < length32; i += 8) {
+        var x = input[i >> 5] >>> i % 32 & 0xff;
+        var hex = parseInt(hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f), 16);
+        output.push(hex);
+      }
+
+      return output;
+    }
+    /**
+     * Calculate output length with padding and bit length
+     */
+
+
+    function getOutputLength(inputLength8) {
+      return (inputLength8 + 64 >>> 9 << 4) + 14 + 1;
+    }
+    /*
+     * Calculate the MD5 of an array of little-endian words, and a bit length.
+     */
+
+
+    function wordsToMd5(x, len) {
+      /* append padding */
+      x[len >> 5] |= 0x80 << len % 32;
+      x[getOutputLength(len) - 1] = len;
+      var a = 1732584193;
+      var b = -271733879;
+      var c = -1732584194;
+      var d = 271733878;
+
+      for (var i = 0; i < x.length; i += 16) {
+        var olda = a;
+        var oldb = b;
+        var oldc = c;
+        var oldd = d;
+        a = md5ff(a, b, c, d, x[i], 7, -680876936);
+        d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
+        c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
+        b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
+        a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
+        d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
+        c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
+        b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
+        a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
+        d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
+        c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
+        b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
+        a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
+        d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
+        c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
+        b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
+        a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
+        d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
+        c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
+        b = md5gg(b, c, d, a, x[i], 20, -373897302);
+        a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
+        d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
+        c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
+        b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
+        a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
+        d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
+        c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
+        b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
+        a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
+        d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
+        c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
+        b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
+        a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
+        d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
+        c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
+        b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
+        a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
+        d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
+        c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
+        b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
+        a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
+        d = md5hh(d, a, b, c, x[i], 11, -358537222);
+        c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
+        b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
+        a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
+        d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
+        c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
+        b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
+        a = md5ii(a, b, c, d, x[i], 6, -198630844);
+        d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
+        c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
+        b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
+        a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
+        d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
+        c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
+        b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
+        a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
+        d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
+        c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
+        b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
+        a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
+        d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
+        c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
+        b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
+        a = safeAdd(a, olda);
+        b = safeAdd(b, oldb);
+        c = safeAdd(c, oldc);
+        d = safeAdd(d, oldd);
+      }
+
+      return [a, b, c, d];
+    }
+    /*
+     * Convert an array bytes to an array of little-endian words
+     * Characters >255 have their high-byte silently ignored.
+     */
+
+
+    function bytesToWords(input) {
+      if (input.length === 0) {
+        return [];
+      }
+
+      var length8 = input.length * 8;
+      var output = new Uint32Array(getOutputLength(length8));
+
+      for (var i = 0; i < length8; i += 8) {
+        output[i >> 5] |= (input[i / 8] & 0xff) << i % 32;
+      }
+
+      return output;
+    }
+    /*
+     * Add integers, wrapping at 2^32. This uses 16-bit operations internally
+     * to work around bugs in some JS interpreters.
+     */
+
+
+    function safeAdd(x, y) {
+      var lsw = (x & 0xffff) + (y & 0xffff);
+      var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+      return msw << 16 | lsw & 0xffff;
+    }
+    /*
+     * Bitwise rotate a 32-bit number to the left.
+     */
+
+
+    function bitRotateLeft(num, cnt) {
+      return num << cnt | num >>> 32 - cnt;
+    }
+    /*
+     * These functions implement the four basic operations the algorithm uses.
+     */
+
+
+    function md5cmn(q, a, b, x, s, t) {
+      return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
+    }
+
+    function md5ff(a, b, c, d, x, s, t) {
+      return md5cmn(b & c | ~b & d, a, b, x, s, t);
+    }
+
+    function md5gg(a, b, c, d, x, s, t) {
+      return md5cmn(b & d | c & ~d, a, b, x, s, t);
+    }
+
+    function md5hh(a, b, c, d, x, s, t) {
+      return md5cmn(b ^ c ^ d, a, b, x, s, t);
+    }
+
+    function md5ii(a, b, c, d, x, s, t) {
+      return md5cmn(c ^ (b | ~d), a, b, x, s, t);
+    }
+
+    var v3 = v35('v3', 0x30, md5);
+    var v3$1 = v3;
+
+    function v4(options, buf, offset) {
+      options = options || {};
+      var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
+
+      rnds[6] = rnds[6] & 0x0f | 0x40;
+      rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
+
+      if (buf) {
+        offset = offset || 0;
+
+        for (var i = 0; i < 16; ++i) {
+          buf[offset + i] = rnds[i];
+        }
+
+        return buf;
+      }
+
+      return stringify(rnds);
+    }
+
+    // Adapted from Chris Veness' SHA1 code at
+    // http://www.movable-type.co.uk/scripts/sha1.html
+    function f(s, x, y, z) {
+      switch (s) {
+        case 0:
+          return x & y ^ ~x & z;
+
+        case 1:
+          return x ^ y ^ z;
+
+        case 2:
+          return x & y ^ x & z ^ y & z;
+
+        case 3:
+          return x ^ y ^ z;
+      }
+    }
+
+    function ROTL(x, n) {
+      return x << n | x >>> 32 - n;
+    }
+
+    function sha1(bytes) {
+      var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
+      var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+
+      if (typeof bytes === 'string') {
+        var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
+
+        bytes = [];
+
+        for (var i = 0; i < msg.length; ++i) {
+          bytes.push(msg.charCodeAt(i));
+        }
+      } else if (!Array.isArray(bytes)) {
+        // Convert Array-like to Array
+        bytes = Array.prototype.slice.call(bytes);
+      }
+
+      bytes.push(0x80);
+      var l = bytes.length / 4 + 2;
+      var N = Math.ceil(l / 16);
+      var M = new Array(N);
+
+      for (var _i = 0; _i < N; ++_i) {
+        var arr = new Uint32Array(16);
+
+        for (var j = 0; j < 16; ++j) {
+          arr[j] = bytes[_i * 64 + j * 4] << 24 | bytes[_i * 64 + j * 4 + 1] << 16 | bytes[_i * 64 + j * 4 + 2] << 8 | bytes[_i * 64 + j * 4 + 3];
+        }
+
+        M[_i] = arr;
+      }
+
+      M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
+      M[N - 1][14] = Math.floor(M[N - 1][14]);
+      M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
+
+      for (var _i2 = 0; _i2 < N; ++_i2) {
+        var W = new Uint32Array(80);
+
+        for (var t = 0; t < 16; ++t) {
+          W[t] = M[_i2][t];
+        }
+
+        for (var _t = 16; _t < 80; ++_t) {
+          W[_t] = ROTL(W[_t - 3] ^ W[_t - 8] ^ W[_t - 14] ^ W[_t - 16], 1);
+        }
+
+        var a = H[0];
+        var b = H[1];
+        var c = H[2];
+        var d = H[3];
+        var e = H[4];
+
+        for (var _t2 = 0; _t2 < 80; ++_t2) {
+          var s = Math.floor(_t2 / 20);
+          var T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[_t2] >>> 0;
+          e = d;
+          d = c;
+          c = ROTL(b, 30) >>> 0;
+          b = a;
+          a = T;
+        }
+
+        H[0] = H[0] + a >>> 0;
+        H[1] = H[1] + b >>> 0;
+        H[2] = H[2] + c >>> 0;
+        H[3] = H[3] + d >>> 0;
+        H[4] = H[4] + e >>> 0;
+      }
+
+      return [H[0] >> 24 & 0xff, H[0] >> 16 & 0xff, H[0] >> 8 & 0xff, H[0] & 0xff, H[1] >> 24 & 0xff, H[1] >> 16 & 0xff, H[1] >> 8 & 0xff, H[1] & 0xff, H[2] >> 24 & 0xff, H[2] >> 16 & 0xff, H[2] >> 8 & 0xff, H[2] & 0xff, H[3] >> 24 & 0xff, H[3] >> 16 & 0xff, H[3] >> 8 & 0xff, H[3] & 0xff, H[4] >> 24 & 0xff, H[4] >> 16 & 0xff, H[4] >> 8 & 0xff, H[4] & 0xff];
+    }
+
+    var v5 = v35('v5', 0x50, sha1);
+    var v5$1 = v5;
+
+    var nil = '00000000-0000-0000-0000-000000000000';
+
+    function version(uuid) {
+      if (!validate(uuid)) {
+        throw TypeError('Invalid UUID');
+      }
+
+      return parseInt(uuid.substr(14, 1), 16);
+    }
+
+    var esmBrowser = /*#__PURE__*/Object.freeze({
+        __proto__: null,
+        v1: v1,
+        v3: v3$1,
+        v4: v4,
+        v5: v5$1,
+        NIL: nil,
+        version: version,
+        validate: validate,
+        stringify: stringify,
+        parse: parse
+    });
+
+    /**
+     * Converter
+     *
+     * @param {string|Array} srcAlphabet
+     * @param {string|Array} dstAlphabet
+     * @constructor
+     */
+    function Converter(srcAlphabet, dstAlphabet) {
+        if (!srcAlphabet || !dstAlphabet || !srcAlphabet.length || !dstAlphabet.length) {
+            throw new Error('Bad alphabet');
+        }
+        this.srcAlphabet = srcAlphabet;
+        this.dstAlphabet = dstAlphabet;
+    }
+
+    /**
+     * Convert number from source alphabet to destination alphabet
+     *
+     * @param {string|Array} number - number represented as a string or array of points
+     *
+     * @returns {string|Array}
+     */
+    Converter.prototype.convert = function(number) {
+        var i, divide, newlen,
+        numberMap = {},
+        fromBase = this.srcAlphabet.length,
+        toBase = this.dstAlphabet.length,
+        length = number.length,
+        result = typeof number === 'string' ? '' : [];
+
+        if (!this.isValid(number)) {
+            throw new Error('Number "' + number + '" contains of non-alphabetic digits (' + this.srcAlphabet + ')');
+        }
+
+        if (this.srcAlphabet === this.dstAlphabet) {
+            return number;
+        }
+
+        for (i = 0; i < length; i++) {
+            numberMap[i] = this.srcAlphabet.indexOf(number[i]);
+        }
+        do {
+            divide = 0;
+            newlen = 0;
+            for (i = 0; i < length; i++) {
+                divide = divide * fromBase + numberMap[i];
+                if (divide >= toBase) {
+                    numberMap[newlen++] = parseInt(divide / toBase, 10);
+                    divide = divide % toBase;
+                } else if (newlen > 0) {
+                    numberMap[newlen++] = 0;
+                }
+            }
+            length = newlen;
+            result = this.dstAlphabet.slice(divide, divide + 1).concat(result);
+        } while (newlen !== 0);
+
+        return result;
+    };
+
+    /**
+     * Valid number with source alphabet
+     *
+     * @param {number} number
+     *
+     * @returns {boolean}
+     */
+    Converter.prototype.isValid = function(number) {
+        var i = 0;
+        for (; i < number.length; ++i) {
+            if (this.srcAlphabet.indexOf(number[i]) === -1) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    var converter = Converter;
+
+    /**
+     * Function get source and destination alphabet and return convert function
+     *
+     * @param {string|Array} srcAlphabet
+     * @param {string|Array} dstAlphabet
+     *
+     * @returns {function(number|Array)}
+     */
+    function anyBase(srcAlphabet, dstAlphabet) {
+        var converter$1 = new converter(srcAlphabet, dstAlphabet);
+        /**
+         * Convert function
+         *
+         * @param {string|Array} number
+         *
+         * @return {string|Array} number
+         */
+        return function (number) {
+            return converter$1.convert(number);
+        }
+    }
+    anyBase.BIN = '01';
+    anyBase.OCT = '01234567';
+    anyBase.DEC = '0123456789';
+    anyBase.HEX = '0123456789abcdef';
+
+    var anyBase_1 = anyBase;
+
+    function getAugmentedNamespace(n) {
+    	if (n.__esModule) return n;
+    	var a = Object.defineProperty({}, '__esModule', {value: true});
+    	Object.keys(n).forEach(function (k) {
+    		var d = Object.getOwnPropertyDescriptor(n, k);
+    		Object.defineProperty(a, k, d.get ? d : {
+    			enumerable: true,
+    			get: function () {
+    				return n[k];
+    			}
+    		});
+    	});
+    	return a;
+    }
+
+    var require$$0 = /*@__PURE__*/getAugmentedNamespace(esmBrowser);
+
+    /**
+     * Created by Samuel on 6/4/2016.
+     * Simple wrapper functions to produce shorter UUIDs for cookies, maybe everything?
+     */
+
+    const { v4: uuidv4 } = require$$0;
+
+
+    const flickrBase58 = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+    const cookieBase90 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&'()*+-./:<=>?@[]^_`{|}~";
+
+    const baseOptions = {
+      consistentLength: true,
+    };
+
+    // A default generator, instantiated only if used.
+    let toFlickr;
+
+    /**
+     * Takes a UUID, strips the dashes, and translates.
+     * @param {string} longId
+     * @param {function(string)} translator
+     * @param {Object} [paddingParams]
+     * @returns {string}
+     */
+    const shortenUUID = (longId, translator, paddingParams) => {
+      const translated = translator(longId.toLowerCase().replace(/-/g, ''));
+
+      if (!paddingParams || !paddingParams.consistentLength) return translated;
+
+      return translated.padStart(
+        paddingParams.shortIdLength,
+        paddingParams.paddingChar,
+      );
+    };
+
+    /**
+     * Translate back to hex and turn back into UUID format, with dashes
+     * @param {string} shortId
+     * @param {function(string)} translator
+     * @returns {string}
+     */
+    const enlargeUUID = (shortId, translator) => {
+      const uu1 = translator(shortId).padStart(32, '0');
+
+      // Join the zero padding and the UUID and then slice it up with match
+      const m = uu1.match(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/);
+
+      // Accumulate the matches and join them.
+      return [m[1], m[2], m[3], m[4], m[5]].join('-');
+    };
+
+    // Calculate length for the shortened ID
+    const getShortIdLength = (alphabetLength) => (
+      Math.ceil(Math.log(2 ** 128) / Math.log(alphabetLength)));
+
+    var shortUuid = (() => {
+      /**
+       * @param {string} toAlphabet - Defaults to flickrBase58 if not provided
+       * @param {Object} [options]
+       *
+       * @returns {{new: (function()),
+       *  uuid: (function()),
+       *  fromUUID: (function(string)),
+       *  toUUID: (function(string)),
+       *  alphabet: (string)}}
+       */
+      const makeConvertor = (toAlphabet, options) => {
+        // Default to Flickr 58
+        const useAlphabet = toAlphabet || flickrBase58;
+
+        // Default to baseOptions
+        const selectedOptions = { ...baseOptions, ...options };
+
+        // Check alphabet for duplicate entries
+        if ([...new Set(Array.from(useAlphabet))].length !== useAlphabet.length) {
+          throw new Error('The provided Alphabet has duplicate characters resulting in unreliable results');
+        }
+
+        const shortIdLength = getShortIdLength(useAlphabet.length);
+
+        // Padding Params
+        const paddingParams = {
+          shortIdLength,
+          consistentLength: selectedOptions.consistentLength,
+          paddingChar: useAlphabet[0],
+        };
+
+        // UUIDs are in hex, so we translate to and from.
+        const fromHex = anyBase_1(anyBase_1.HEX, useAlphabet);
+        const toHex = anyBase_1(useAlphabet, anyBase_1.HEX);
+        const generate = () => shortenUUID(uuidv4(), fromHex, paddingParams);
+
+        const translator = {
+          new: generate,
+          generate,
+          uuid: uuidv4,
+          fromUUID: (uuid) => shortenUUID(uuid, fromHex, paddingParams),
+          toUUID: (shortUuid) => enlargeUUID(shortUuid, toHex),
+          alphabet: useAlphabet,
+          maxLength: shortIdLength,
+        };
+
+        Object.freeze(translator);
+
+        return translator;
+      };
+
+      // Expose the constants for other purposes.
+      makeConvertor.constants = {
+        flickrBase58,
+        cookieBase90,
+      };
+
+      // Expose the generic v4 UUID generator for convenience
+      makeConvertor.uuid = uuidv4;
+
+      // Provide a generic generator
+      makeConvertor.generate = () => {
+        if (!toFlickr) {
+          // Generate on first use;
+          toFlickr = makeConvertor(flickrBase58).generate;
+        }
+        return toFlickr();
+      };
+
+      return makeConvertor;
+    })();
+
+    /* src/ImportSchema.svelte generated by Svelte v3.44.0 */
+
+    const { console: console_1$3 } = globals;
+
+    const file$8 = "src/ImportSchema.svelte";
+
+    // (99:0) {#if modalIsOpen}
+    function create_if_block$5(ctx) {
+    	let div2;
+    	let div1;
+    	let label;
+    	let t0;
+    	let textarea;
+    	let t1;
+    	let div0;
+    	let button0;
+    	let t3;
+    	let button1;
+    	let mounted;
+    	let dispose;
+
+    	const block = {
+    		c: function create() {
+    			div2 = element("div");
+    			div1 = element("div");
+    			label = element("label");
+    			t0 = text("Paste Snippet:\n        ");
+    			textarea = element("textarea");
+    			t1 = space();
+    			div0 = element("div");
+    			button0 = element("button");
+    			button0.textContent = "Okay";
+    			t3 = space();
+    			button1 = element("button");
+    			button1.textContent = "cancel";
+    			attr_dev(textarea, "rows", "10");
+    			attr_dev(textarea, "class", "svelte-1upxmbv");
+    			add_location(textarea, file$8, 103, 8, 2217);
+    			attr_dev(label, "class", "svelte-1upxmbv");
+    			add_location(label, file$8, 101, 6, 2178);
+    			add_location(button0, file$8, 109, 8, 2337);
+    			add_location(button1, file$8, 112, 8, 2411);
+    			attr_dev(div0, "class", "footer svelte-1upxmbv");
+    			add_location(div0, file$8, 108, 6, 2308);
+    			attr_dev(div1, "class", "modal svelte-1upxmbv");
+    			add_location(div1, file$8, 100, 4, 2152);
+    			attr_dev(div2, "class", "screen svelte-1upxmbv");
+    			add_location(div2, file$8, 99, 2, 2127);
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, div2, anchor);
+    			append_dev(div2, div1);
+    			append_dev(div1, label);
+    			append_dev(label, t0);
+    			append_dev(label, textarea);
+    			set_input_value(textarea, /*snippet*/ ctx[1]);
+    			append_dev(div1, t1);
+    			append_dev(div1, div0);
+    			append_dev(div0, button0);
+    			append_dev(div0, t3);
+    			append_dev(div0, button1);
+
+    			if (!mounted) {
+    				dispose = [
+    					listen_dev(textarea, "input", /*textarea_input_handler*/ ctx[5]),
+    					listen_dev(button0, "click", /*parseSnippet*/ ctx[4], false, false, false),
+    					listen_dev(button1, "click", /*closeModal*/ ctx[2], false, false, false)
+    				];
+
+    				mounted = true;
+    			}
+    		},
+    		p: function update(ctx, dirty) {
+    			if (dirty & /*snippet*/ 2) {
+    				set_input_value(textarea, /*snippet*/ ctx[1]);
+    			}
+    		},
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(div2);
+    			mounted = false;
+    			run_all(dispose);
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_if_block$5.name,
+    		type: "if",
+    		source: "(99:0) {#if modalIsOpen}",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function create_fragment$8(ctx) {
+    	let button;
+    	let t1;
+    	let if_block_anchor;
+    	let mounted;
+    	let dispose;
+    	let if_block = /*modalIsOpen*/ ctx[0] && create_if_block$5(ctx);
+
+    	const block = {
+    		c: function create() {
+    			button = element("button");
+    			button.textContent = "Import Schema";
+    			t1 = space();
+    			if (if_block) if_block.c();
+    			if_block_anchor = empty();
+    			add_location(button, file$8, 94, 0, 2047);
+    		},
+    		l: function claim(nodes) {
+    			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
+    		},
+    		m: function mount(target, anchor) {
+    			insert_dev(target, button, anchor);
+    			insert_dev(target, t1, anchor);
+    			if (if_block) if_block.m(target, anchor);
+    			insert_dev(target, if_block_anchor, anchor);
+
+    			if (!mounted) {
+    				dispose = listen_dev(button, "click", /*importSchema*/ ctx[3], false, false, false);
+    				mounted = true;
+    			}
+    		},
+    		p: function update(ctx, [dirty]) {
+    			if (/*modalIsOpen*/ ctx[0]) {
+    				if (if_block) {
+    					if_block.p(ctx, dirty);
+    				} else {
+    					if_block = create_if_block$5(ctx);
+    					if_block.c();
+    					if_block.m(if_block_anchor.parentNode, if_block_anchor);
+    				}
+    			} else if (if_block) {
+    				if_block.d(1);
+    				if_block = null;
+    			}
+    		},
+    		i: noop,
+    		o: noop,
+    		d: function destroy(detaching) {
+    			if (detaching) detach_dev(button);
+    			if (detaching) detach_dev(t1);
+    			if (if_block) if_block.d(detaching);
+    			if (detaching) detach_dev(if_block_anchor);
+    			mounted = false;
+    			dispose();
+    		}
+    	};
+
+    	dispatch_dev("SvelteRegisterBlock", {
+    		block,
+    		id: create_fragment$8.name,
+    		type: "component",
+    		source: "",
+    		ctx
+    	});
+
+    	return block;
+    }
+
+    function instance$8($$self, $$props, $$invalidate) {
+    	let $steps;
+    	let $sections;
+    	let $supplies;
+    	let $tools;
+    	let $totalTime;
+    	let $performTime;
+    	let $prepTime;
+    	let $description;
+    	let $name;
+    	validate_store(steps, 'steps');
+    	component_subscribe($$self, steps, $$value => $$invalidate(6, $steps = $$value));
+    	validate_store(sections, 'sections');
+    	component_subscribe($$self, sections, $$value => $$invalidate(7, $sections = $$value));
+    	validate_store(supplies, 'supplies');
+    	component_subscribe($$self, supplies, $$value => $$invalidate(8, $supplies = $$value));
+    	validate_store(tools, 'tools');
+    	component_subscribe($$self, tools, $$value => $$invalidate(9, $tools = $$value));
+    	validate_store(totalTime, 'totalTime');
+    	component_subscribe($$self, totalTime, $$value => $$invalidate(10, $totalTime = $$value));
+    	validate_store(performTime, 'performTime');
+    	component_subscribe($$self, performTime, $$value => $$invalidate(11, $performTime = $$value));
+    	validate_store(prepTime, 'prepTime');
+    	component_subscribe($$self, prepTime, $$value => $$invalidate(12, $prepTime = $$value));
+    	validate_store(description, 'description');
+    	component_subscribe($$self, description, $$value => $$invalidate(13, $description = $$value));
+    	validate_store(name, 'name');
+    	component_subscribe($$self, name, $$value => $$invalidate(14, $name = $$value));
+    	let { $$slots: slots = {}, $$scope } = $$props;
+    	validate_slots('ImportSchema', slots, []);
+    	let modalIsOpen = false;
+    	let snippet = '';
+
+    	const listenForEsc = e => {
+    		if (e.code === `Escape`) {
+    			closeModal();
+    		}
+    	};
+
+    	const closeModal = () => {
+    		$$invalidate(0, modalIsOpen = false);
+    		document.removeEventListener('keydown', listenForEsc);
+    	};
+
+    	const importSchema = () => {
+    		console.log('open a modal and paste some shit in here');
+    		$$invalidate(0, modalIsOpen = true);
+    		document.addEventListener('keydown', listenForEsc);
+    	};
+
+    	const parseSnippet = () => {
+    		closeModal();
+    		let json = JSON.parse(snippet);
+    		set_store_value(name, $name = json.name, $name);
+    		set_store_value(description, $description = json.description, $description);
+    		set_store_value(prepTime, $prepTime = json.prepTime, $prepTime);
+    		set_store_value(performTime, $performTime = json.performTime, $performTime);
+    		set_store_value(totalTime, $totalTime = json.totalTime, $totalTime);
+
+    		if (json.tool) {
+    			set_store_value(
+    				tools,
+    				$tools = json.tool.map(tool => {
+    					return {
+    						id: shortUuid.generate(),
+    						name: tool.name,
+    						image: tool.image ? tool.image : null
+    					};
+    				}),
+    				$tools
+    			);
+    		}
+
+    		if (json.supply) {
+    			set_store_value(
+    				supplies,
+    				$supplies = json.supply.map(supply => {
+    					return {
+    						id: shortUuid.generate(),
+    						name: supply.name,
+    						image: supply.image ? supply.image : null
+    					};
+    				}),
+    				$supplies
+    			);
+    		}
+
+    		const populateNodes = node => {
+    			return {
+    				id: shortUuid.generate(),
+    				text: node.text,
+    				type: node[`@type`],
+    				image: node.image
+    			};
+    		};
+
+    		const populateSteps = step => {
+    			return {
+    				id: shortUuid.generate(),
+    				children: step.itemListElement.map(populateNodes)
+    			};
+    		};
+
+    		if (json.step[0][`@type`] === `HowToSection`) {
+    			console.log('render sections');
+
+    			set_store_value(
+    				sections,
+    				$sections = json.step.map(section => {
+    					console.log(section.itemListElement);
+
+    					return {
+    						id: shortUuid.generate(),
+    						name: section.name,
+    						steps: section.itemListElement.map(populateSteps)
+    					};
+    				}),
+    				$sections
+    			);
+    		} else {
+    			set_store_value(steps, $steps = populateSteps(json.step), $steps);
+    		}
+    	};
+
+    	const writable_props = [];
+
+    	Object.keys($$props).forEach(key => {
+    		if (!~writable_props.indexOf(key) && key.slice(0, 2) !== '$$' && key !== 'slot') console_1$3.warn(`<ImportSchema> was created with unknown prop '${key}'`);
+    	});
+
+    	function textarea_input_handler() {
+    		snippet = this.value;
+    		$$invalidate(1, snippet);
+    	}
+
+    	$$self.$capture_state = () => ({
+    		short: shortUuid,
+    		name,
+    		description,
+    		prepTime,
+    		performTime,
+    		totalTime,
+    		tools,
+    		supplies,
+    		steps,
+    		sections,
+    		modalIsOpen,
+    		snippet,
+    		listenForEsc,
+    		closeModal,
+    		importSchema,
+    		parseSnippet,
+    		$steps,
+    		$sections,
+    		$supplies,
+    		$tools,
+    		$totalTime,
+    		$performTime,
+    		$prepTime,
+    		$description,
+    		$name
+    	});
+
+    	$$self.$inject_state = $$props => {
+    		if ('modalIsOpen' in $$props) $$invalidate(0, modalIsOpen = $$props.modalIsOpen);
+    		if ('snippet' in $$props) $$invalidate(1, snippet = $$props.snippet);
+    	};
+
+    	if ($$props && "$$inject" in $$props) {
+    		$$self.$inject_state($$props.$$inject);
+    	}
+
+    	return [
+    		modalIsOpen,
+    		snippet,
+    		closeModal,
+    		importSchema,
+    		parseSnippet,
+    		textarea_input_handler
+    	];
+    }
+
+    class ImportSchema extends SvelteComponentDev {
+    	constructor(options) {
+    		super(options);
+    		init(this, options, instance$8, create_fragment$8, safe_not_equal, {});
+
+    		dispatch_dev("SvelteRegisterComponent", {
+    			component: this,
+    			tagName: "ImportSchema",
+    			options,
+    			id: create_fragment$8.name
+    		});
+    	}
+    }
+
     /* src/CodeBlock.svelte generated by Svelte v3.44.0 */
     const file$7 = "src/CodeBlock.svelte";
 
-    // (60:4) {:else}
+    // (61:4) {:else}
     function create_else_block$3(ctx) {
     	let t;
 
@@ -947,14 +2157,14 @@ var app = (function () {
     		block,
     		id: create_else_block$3.name,
     		type: "else",
-    		source: "(60:4) {:else}",
+    		source: "(61:4) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (58:26) 
+    // (59:26) 
     function create_if_block_1$1(ctx) {
     	let t;
 
@@ -974,14 +2184,14 @@ var app = (function () {
     		block,
     		id: create_if_block_1$1.name,
     		type: "if",
-    		source: "(58:26) ",
+    		source: "(59:26) ",
     		ctx
     	});
 
     	return block;
     }
 
-    // (56:4) {#if copySuccess}
+    // (57:4) {#if copySuccess}
     function create_if_block$4(ctx) {
     	let t;
 
@@ -1001,7 +2211,7 @@ var app = (function () {
     		block,
     		id: create_if_block$4.name,
     		type: "if",
-    		source: "(56:4) {#if copySuccess}",
+    		source: "(57:4) {#if copySuccess}",
     		ctx
     	});
 
@@ -1015,6 +2225,9 @@ var app = (function () {
     	let pre;
     	let code;
     	let t1;
+    	let t2;
+    	let importschema;
+    	let current;
     	let mounted;
     	let dispose;
 
@@ -1026,6 +2239,7 @@ var app = (function () {
 
     	let current_block_type = select_block_type(ctx);
     	let if_block = current_block_type(ctx);
+    	importschema = new ImportSchema({ $$inline: true });
 
     	const block = {
     		c: function create() {
@@ -1036,13 +2250,15 @@ var app = (function () {
     			pre = element("pre");
     			code = element("code");
     			t1 = text(/*snippet*/ ctx[0]);
+    			t2 = space();
+    			create_component(importschema.$$.fragment);
     			attr_dev(button, "class", "svelte-qbqvdz");
-    			add_location(button, file$7, 54, 2, 1031);
-    			add_location(code, file$7, 63, 7, 1182);
+    			add_location(button, file$7, 55, 2, 1082);
+    			add_location(code, file$7, 64, 7, 1233);
     			attr_dev(pre, "class", "svelte-qbqvdz");
-    			add_location(pre, file$7, 63, 2, 1177);
+    			add_location(pre, file$7, 64, 2, 1228);
     			attr_dev(div, "class", "svelte-qbqvdz");
-    			add_location(div, file$7, 53, 0, 1023);
+    			add_location(div, file$7, 54, 0, 1074);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -1055,6 +2271,9 @@ var app = (function () {
     			append_dev(div, pre);
     			append_dev(pre, code);
     			append_dev(code, t1);
+    			insert_dev(target, t2, anchor);
+    			mount_component(importschema, target, anchor);
+    			current = true;
 
     			if (!mounted) {
     				dispose = listen_dev(button, "click", /*copyToClipboard*/ ctx[3], false, false, false);
@@ -1072,13 +2291,22 @@ var app = (function () {
     				}
     			}
 
-    			if (dirty & /*snippet*/ 1) set_data_dev(t1, /*snippet*/ ctx[0]);
+    			if (!current || dirty & /*snippet*/ 1) set_data_dev(t1, /*snippet*/ ctx[0]);
     		},
-    		i: noop,
-    		o: noop,
+    		i: function intro(local) {
+    			if (current) return;
+    			transition_in(importschema.$$.fragment, local);
+    			current = true;
+    		},
+    		o: function outro(local) {
+    			transition_out(importschema.$$.fragment, local);
+    			current = false;
+    		},
     		d: function destroy(detaching) {
     			if (detaching) detach_dev(div);
     			if_block.d();
+    			if (detaching) detach_dev(t2);
+    			destroy_component(importschema, detaching);
     			mounted = false;
     			dispose();
     		}
@@ -1176,6 +2404,7 @@ var app = (function () {
     		sections,
     		steps,
     		generateSchema,
+    		ImportSchema,
     		snippet,
     		copySuccess,
     		copyFailure,
@@ -3095,857 +4324,6 @@ ${JSON.stringify(
     function isInt(value) {
         return !isNaN(value) && (function(x) { return (x | 0) === x; })(parseFloat(value));
     }
-
-    // Unique ID creation requires a high quality random # generator. In the browser we therefore
-    // require the crypto API and do not support built-in fallback to lower quality random number
-    // generators (like Math.random()).
-    var getRandomValues;
-    var rnds8 = new Uint8Array(16);
-    function rng() {
-      // lazy load so that environments that need to polyfill have a chance to do so
-      if (!getRandomValues) {
-        // getRandomValues needs to be invoked in a context where "this" is a Crypto implementation. Also,
-        // find the complete implementation of crypto (msCrypto) on IE11.
-        getRandomValues = typeof crypto !== 'undefined' && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== 'undefined' && typeof msCrypto.getRandomValues === 'function' && msCrypto.getRandomValues.bind(msCrypto);
-
-        if (!getRandomValues) {
-          throw new Error('crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported');
-        }
-      }
-
-      return getRandomValues(rnds8);
-    }
-
-    var REGEX = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
-
-    function validate(uuid) {
-      return typeof uuid === 'string' && REGEX.test(uuid);
-    }
-
-    /**
-     * Convert array of 16 byte values to UUID string format of the form:
-     * XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-     */
-
-    var byteToHex = [];
-
-    for (var i = 0; i < 256; ++i) {
-      byteToHex.push((i + 0x100).toString(16).substr(1));
-    }
-
-    function stringify(arr) {
-      var offset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-      // Note: Be careful editing this code!  It's been tuned for performance
-      // and works in ways you may not expect. See https://github.com/uuidjs/uuid/pull/434
-      var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + '-' + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + '-' + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + '-' + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + '-' + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase(); // Consistency check for valid UUID.  If this throws, it's likely due to one
-      // of the following:
-      // - One or more input array values don't map to a hex octet (leading to
-      // "undefined" in the uuid)
-      // - Invalid input values for the RFC `version` or `variant` fields
-
-      if (!validate(uuid)) {
-        throw TypeError('Stringified UUID is invalid');
-      }
-
-      return uuid;
-    }
-
-    //
-    // Inspired by https://github.com/LiosK/UUID.js
-    // and http://docs.python.org/library/uuid.html
-
-    var _nodeId;
-
-    var _clockseq; // Previous uuid creation time
-
-
-    var _lastMSecs = 0;
-    var _lastNSecs = 0; // See https://github.com/uuidjs/uuid for API details
-
-    function v1(options, buf, offset) {
-      var i = buf && offset || 0;
-      var b = buf || new Array(16);
-      options = options || {};
-      var node = options.node || _nodeId;
-      var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq; // node and clockseq need to be initialized to random values if they're not
-      // specified.  We do this lazily to minimize issues related to insufficient
-      // system entropy.  See #189
-
-      if (node == null || clockseq == null) {
-        var seedBytes = options.random || (options.rng || rng)();
-
-        if (node == null) {
-          // Per 4.5, create and 48-bit node id, (47 random bits + multicast bit = 1)
-          node = _nodeId = [seedBytes[0] | 0x01, seedBytes[1], seedBytes[2], seedBytes[3], seedBytes[4], seedBytes[5]];
-        }
-
-        if (clockseq == null) {
-          // Per 4.2.2, randomize (14 bit) clockseq
-          clockseq = _clockseq = (seedBytes[6] << 8 | seedBytes[7]) & 0x3fff;
-        }
-      } // UUID timestamps are 100 nano-second units since the Gregorian epoch,
-      // (1582-10-15 00:00).  JSNumbers aren't precise enough for this, so
-      // time is handled internally as 'msecs' (integer milliseconds) and 'nsecs'
-      // (100-nanoseconds offset from msecs) since unix epoch, 1970-01-01 00:00.
-
-
-      var msecs = options.msecs !== undefined ? options.msecs : Date.now(); // Per 4.2.1.2, use count of uuid's generated during the current clock
-      // cycle to simulate higher resolution clock
-
-      var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1; // Time since last uuid creation (in msecs)
-
-      var dt = msecs - _lastMSecs + (nsecs - _lastNSecs) / 10000; // Per 4.2.1.2, Bump clockseq on clock regression
-
-      if (dt < 0 && options.clockseq === undefined) {
-        clockseq = clockseq + 1 & 0x3fff;
-      } // Reset nsecs if clock regresses (new clockseq) or we've moved onto a new
-      // time interval
-
-
-      if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
-        nsecs = 0;
-      } // Per 4.2.1.2 Throw error if too many uuids are requested
-
-
-      if (nsecs >= 10000) {
-        throw new Error("uuid.v1(): Can't create more than 10M uuids/sec");
-      }
-
-      _lastMSecs = msecs;
-      _lastNSecs = nsecs;
-      _clockseq = clockseq; // Per 4.1.4 - Convert from unix epoch to Gregorian epoch
-
-      msecs += 12219292800000; // `time_low`
-
-      var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
-      b[i++] = tl >>> 24 & 0xff;
-      b[i++] = tl >>> 16 & 0xff;
-      b[i++] = tl >>> 8 & 0xff;
-      b[i++] = tl & 0xff; // `time_mid`
-
-      var tmh = msecs / 0x100000000 * 10000 & 0xfffffff;
-      b[i++] = tmh >>> 8 & 0xff;
-      b[i++] = tmh & 0xff; // `time_high_and_version`
-
-      b[i++] = tmh >>> 24 & 0xf | 0x10; // include version
-
-      b[i++] = tmh >>> 16 & 0xff; // `clock_seq_hi_and_reserved` (Per 4.2.2 - include variant)
-
-      b[i++] = clockseq >>> 8 | 0x80; // `clock_seq_low`
-
-      b[i++] = clockseq & 0xff; // `node`
-
-      for (var n = 0; n < 6; ++n) {
-        b[i + n] = node[n];
-      }
-
-      return buf || stringify(b);
-    }
-
-    function parse(uuid) {
-      if (!validate(uuid)) {
-        throw TypeError('Invalid UUID');
-      }
-
-      var v;
-      var arr = new Uint8Array(16); // Parse ########-....-....-....-............
-
-      arr[0] = (v = parseInt(uuid.slice(0, 8), 16)) >>> 24;
-      arr[1] = v >>> 16 & 0xff;
-      arr[2] = v >>> 8 & 0xff;
-      arr[3] = v & 0xff; // Parse ........-####-....-....-............
-
-      arr[4] = (v = parseInt(uuid.slice(9, 13), 16)) >>> 8;
-      arr[5] = v & 0xff; // Parse ........-....-####-....-............
-
-      arr[6] = (v = parseInt(uuid.slice(14, 18), 16)) >>> 8;
-      arr[7] = v & 0xff; // Parse ........-....-....-####-............
-
-      arr[8] = (v = parseInt(uuid.slice(19, 23), 16)) >>> 8;
-      arr[9] = v & 0xff; // Parse ........-....-....-....-############
-      // (Use "/" to avoid 32-bit truncation when bit-shifting high-order bytes)
-
-      arr[10] = (v = parseInt(uuid.slice(24, 36), 16)) / 0x10000000000 & 0xff;
-      arr[11] = v / 0x100000000 & 0xff;
-      arr[12] = v >>> 24 & 0xff;
-      arr[13] = v >>> 16 & 0xff;
-      arr[14] = v >>> 8 & 0xff;
-      arr[15] = v & 0xff;
-      return arr;
-    }
-
-    function stringToBytes(str) {
-      str = unescape(encodeURIComponent(str)); // UTF8 escape
-
-      var bytes = [];
-
-      for (var i = 0; i < str.length; ++i) {
-        bytes.push(str.charCodeAt(i));
-      }
-
-      return bytes;
-    }
-
-    var DNS = '6ba7b810-9dad-11d1-80b4-00c04fd430c8';
-    var URL = '6ba7b811-9dad-11d1-80b4-00c04fd430c8';
-    function v35 (name, version, hashfunc) {
-      function generateUUID(value, namespace, buf, offset) {
-        if (typeof value === 'string') {
-          value = stringToBytes(value);
-        }
-
-        if (typeof namespace === 'string') {
-          namespace = parse(namespace);
-        }
-
-        if (namespace.length !== 16) {
-          throw TypeError('Namespace must be array-like (16 iterable integer values, 0-255)');
-        } // Compute hash of namespace and value, Per 4.3
-        // Future: Use spread syntax when supported on all platforms, e.g. `bytes =
-        // hashfunc([...namespace, ... value])`
-
-
-        var bytes = new Uint8Array(16 + value.length);
-        bytes.set(namespace);
-        bytes.set(value, namespace.length);
-        bytes = hashfunc(bytes);
-        bytes[6] = bytes[6] & 0x0f | version;
-        bytes[8] = bytes[8] & 0x3f | 0x80;
-
-        if (buf) {
-          offset = offset || 0;
-
-          for (var i = 0; i < 16; ++i) {
-            buf[offset + i] = bytes[i];
-          }
-
-          return buf;
-        }
-
-        return stringify(bytes);
-      } // Function#name is not settable on some platforms (#270)
-
-
-      try {
-        generateUUID.name = name; // eslint-disable-next-line no-empty
-      } catch (err) {} // For CommonJS default export support
-
-
-      generateUUID.DNS = DNS;
-      generateUUID.URL = URL;
-      return generateUUID;
-    }
-
-    /*
-     * Browser-compatible JavaScript MD5
-     *
-     * Modification of JavaScript MD5
-     * https://github.com/blueimp/JavaScript-MD5
-     *
-     * Copyright 2011, Sebastian Tschan
-     * https://blueimp.net
-     *
-     * Licensed under the MIT license:
-     * https://opensource.org/licenses/MIT
-     *
-     * Based on
-     * A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
-     * Digest Algorithm, as defined in RFC 1321.
-     * Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
-     * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
-     * Distributed under the BSD License
-     * See http://pajhome.org.uk/crypt/md5 for more info.
-     */
-    function md5(bytes) {
-      if (typeof bytes === 'string') {
-        var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-        bytes = new Uint8Array(msg.length);
-
-        for (var i = 0; i < msg.length; ++i) {
-          bytes[i] = msg.charCodeAt(i);
-        }
-      }
-
-      return md5ToHexEncodedArray(wordsToMd5(bytesToWords(bytes), bytes.length * 8));
-    }
-    /*
-     * Convert an array of little-endian words to an array of bytes
-     */
-
-
-    function md5ToHexEncodedArray(input) {
-      var output = [];
-      var length32 = input.length * 32;
-      var hexTab = '0123456789abcdef';
-
-      for (var i = 0; i < length32; i += 8) {
-        var x = input[i >> 5] >>> i % 32 & 0xff;
-        var hex = parseInt(hexTab.charAt(x >>> 4 & 0x0f) + hexTab.charAt(x & 0x0f), 16);
-        output.push(hex);
-      }
-
-      return output;
-    }
-    /**
-     * Calculate output length with padding and bit length
-     */
-
-
-    function getOutputLength(inputLength8) {
-      return (inputLength8 + 64 >>> 9 << 4) + 14 + 1;
-    }
-    /*
-     * Calculate the MD5 of an array of little-endian words, and a bit length.
-     */
-
-
-    function wordsToMd5(x, len) {
-      /* append padding */
-      x[len >> 5] |= 0x80 << len % 32;
-      x[getOutputLength(len) - 1] = len;
-      var a = 1732584193;
-      var b = -271733879;
-      var c = -1732584194;
-      var d = 271733878;
-
-      for (var i = 0; i < x.length; i += 16) {
-        var olda = a;
-        var oldb = b;
-        var oldc = c;
-        var oldd = d;
-        a = md5ff(a, b, c, d, x[i], 7, -680876936);
-        d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
-        c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
-        b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
-        a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
-        d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
-        c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
-        b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
-        a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
-        d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
-        c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
-        b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
-        a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
-        d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
-        c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
-        b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
-        a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
-        d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
-        c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
-        b = md5gg(b, c, d, a, x[i], 20, -373897302);
-        a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
-        d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
-        c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
-        b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
-        a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
-        d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
-        c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
-        b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
-        a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
-        d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
-        c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
-        b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
-        a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
-        d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
-        c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
-        b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
-        a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
-        d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
-        c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
-        b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
-        a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
-        d = md5hh(d, a, b, c, x[i], 11, -358537222);
-        c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
-        b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
-        a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
-        d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
-        c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
-        b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
-        a = md5ii(a, b, c, d, x[i], 6, -198630844);
-        d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
-        c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
-        b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
-        a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
-        d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
-        c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
-        b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
-        a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
-        d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
-        c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
-        b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
-        a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
-        d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
-        c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
-        b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
-        a = safeAdd(a, olda);
-        b = safeAdd(b, oldb);
-        c = safeAdd(c, oldc);
-        d = safeAdd(d, oldd);
-      }
-
-      return [a, b, c, d];
-    }
-    /*
-     * Convert an array bytes to an array of little-endian words
-     * Characters >255 have their high-byte silently ignored.
-     */
-
-
-    function bytesToWords(input) {
-      if (input.length === 0) {
-        return [];
-      }
-
-      var length8 = input.length * 8;
-      var output = new Uint32Array(getOutputLength(length8));
-
-      for (var i = 0; i < length8; i += 8) {
-        output[i >> 5] |= (input[i / 8] & 0xff) << i % 32;
-      }
-
-      return output;
-    }
-    /*
-     * Add integers, wrapping at 2^32. This uses 16-bit operations internally
-     * to work around bugs in some JS interpreters.
-     */
-
-
-    function safeAdd(x, y) {
-      var lsw = (x & 0xffff) + (y & 0xffff);
-      var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
-      return msw << 16 | lsw & 0xffff;
-    }
-    /*
-     * Bitwise rotate a 32-bit number to the left.
-     */
-
-
-    function bitRotateLeft(num, cnt) {
-      return num << cnt | num >>> 32 - cnt;
-    }
-    /*
-     * These functions implement the four basic operations the algorithm uses.
-     */
-
-
-    function md5cmn(q, a, b, x, s, t) {
-      return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b);
-    }
-
-    function md5ff(a, b, c, d, x, s, t) {
-      return md5cmn(b & c | ~b & d, a, b, x, s, t);
-    }
-
-    function md5gg(a, b, c, d, x, s, t) {
-      return md5cmn(b & d | c & ~d, a, b, x, s, t);
-    }
-
-    function md5hh(a, b, c, d, x, s, t) {
-      return md5cmn(b ^ c ^ d, a, b, x, s, t);
-    }
-
-    function md5ii(a, b, c, d, x, s, t) {
-      return md5cmn(c ^ (b | ~d), a, b, x, s, t);
-    }
-
-    var v3 = v35('v3', 0x30, md5);
-    var v3$1 = v3;
-
-    function v4(options, buf, offset) {
-      options = options || {};
-      var rnds = options.random || (options.rng || rng)(); // Per 4.4, set bits for version and `clock_seq_hi_and_reserved`
-
-      rnds[6] = rnds[6] & 0x0f | 0x40;
-      rnds[8] = rnds[8] & 0x3f | 0x80; // Copy bytes to buffer, if provided
-
-      if (buf) {
-        offset = offset || 0;
-
-        for (var i = 0; i < 16; ++i) {
-          buf[offset + i] = rnds[i];
-        }
-
-        return buf;
-      }
-
-      return stringify(rnds);
-    }
-
-    // Adapted from Chris Veness' SHA1 code at
-    // http://www.movable-type.co.uk/scripts/sha1.html
-    function f(s, x, y, z) {
-      switch (s) {
-        case 0:
-          return x & y ^ ~x & z;
-
-        case 1:
-          return x ^ y ^ z;
-
-        case 2:
-          return x & y ^ x & z ^ y & z;
-
-        case 3:
-          return x ^ y ^ z;
-      }
-    }
-
-    function ROTL(x, n) {
-      return x << n | x >>> 32 - n;
-    }
-
-    function sha1(bytes) {
-      var K = [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6];
-      var H = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
-
-      if (typeof bytes === 'string') {
-        var msg = unescape(encodeURIComponent(bytes)); // UTF8 escape
-
-        bytes = [];
-
-        for (var i = 0; i < msg.length; ++i) {
-          bytes.push(msg.charCodeAt(i));
-        }
-      } else if (!Array.isArray(bytes)) {
-        // Convert Array-like to Array
-        bytes = Array.prototype.slice.call(bytes);
-      }
-
-      bytes.push(0x80);
-      var l = bytes.length / 4 + 2;
-      var N = Math.ceil(l / 16);
-      var M = new Array(N);
-
-      for (var _i = 0; _i < N; ++_i) {
-        var arr = new Uint32Array(16);
-
-        for (var j = 0; j < 16; ++j) {
-          arr[j] = bytes[_i * 64 + j * 4] << 24 | bytes[_i * 64 + j * 4 + 1] << 16 | bytes[_i * 64 + j * 4 + 2] << 8 | bytes[_i * 64 + j * 4 + 3];
-        }
-
-        M[_i] = arr;
-      }
-
-      M[N - 1][14] = (bytes.length - 1) * 8 / Math.pow(2, 32);
-      M[N - 1][14] = Math.floor(M[N - 1][14]);
-      M[N - 1][15] = (bytes.length - 1) * 8 & 0xffffffff;
-
-      for (var _i2 = 0; _i2 < N; ++_i2) {
-        var W = new Uint32Array(80);
-
-        for (var t = 0; t < 16; ++t) {
-          W[t] = M[_i2][t];
-        }
-
-        for (var _t = 16; _t < 80; ++_t) {
-          W[_t] = ROTL(W[_t - 3] ^ W[_t - 8] ^ W[_t - 14] ^ W[_t - 16], 1);
-        }
-
-        var a = H[0];
-        var b = H[1];
-        var c = H[2];
-        var d = H[3];
-        var e = H[4];
-
-        for (var _t2 = 0; _t2 < 80; ++_t2) {
-          var s = Math.floor(_t2 / 20);
-          var T = ROTL(a, 5) + f(s, b, c, d) + e + K[s] + W[_t2] >>> 0;
-          e = d;
-          d = c;
-          c = ROTL(b, 30) >>> 0;
-          b = a;
-          a = T;
-        }
-
-        H[0] = H[0] + a >>> 0;
-        H[1] = H[1] + b >>> 0;
-        H[2] = H[2] + c >>> 0;
-        H[3] = H[3] + d >>> 0;
-        H[4] = H[4] + e >>> 0;
-      }
-
-      return [H[0] >> 24 & 0xff, H[0] >> 16 & 0xff, H[0] >> 8 & 0xff, H[0] & 0xff, H[1] >> 24 & 0xff, H[1] >> 16 & 0xff, H[1] >> 8 & 0xff, H[1] & 0xff, H[2] >> 24 & 0xff, H[2] >> 16 & 0xff, H[2] >> 8 & 0xff, H[2] & 0xff, H[3] >> 24 & 0xff, H[3] >> 16 & 0xff, H[3] >> 8 & 0xff, H[3] & 0xff, H[4] >> 24 & 0xff, H[4] >> 16 & 0xff, H[4] >> 8 & 0xff, H[4] & 0xff];
-    }
-
-    var v5 = v35('v5', 0x50, sha1);
-    var v5$1 = v5;
-
-    var nil = '00000000-0000-0000-0000-000000000000';
-
-    function version(uuid) {
-      if (!validate(uuid)) {
-        throw TypeError('Invalid UUID');
-      }
-
-      return parseInt(uuid.substr(14, 1), 16);
-    }
-
-    var esmBrowser = /*#__PURE__*/Object.freeze({
-        __proto__: null,
-        v1: v1,
-        v3: v3$1,
-        v4: v4,
-        v5: v5$1,
-        NIL: nil,
-        version: version,
-        validate: validate,
-        stringify: stringify,
-        parse: parse
-    });
-
-    /**
-     * Converter
-     *
-     * @param {string|Array} srcAlphabet
-     * @param {string|Array} dstAlphabet
-     * @constructor
-     */
-    function Converter(srcAlphabet, dstAlphabet) {
-        if (!srcAlphabet || !dstAlphabet || !srcAlphabet.length || !dstAlphabet.length) {
-            throw new Error('Bad alphabet');
-        }
-        this.srcAlphabet = srcAlphabet;
-        this.dstAlphabet = dstAlphabet;
-    }
-
-    /**
-     * Convert number from source alphabet to destination alphabet
-     *
-     * @param {string|Array} number - number represented as a string or array of points
-     *
-     * @returns {string|Array}
-     */
-    Converter.prototype.convert = function(number) {
-        var i, divide, newlen,
-        numberMap = {},
-        fromBase = this.srcAlphabet.length,
-        toBase = this.dstAlphabet.length,
-        length = number.length,
-        result = typeof number === 'string' ? '' : [];
-
-        if (!this.isValid(number)) {
-            throw new Error('Number "' + number + '" contains of non-alphabetic digits (' + this.srcAlphabet + ')');
-        }
-
-        if (this.srcAlphabet === this.dstAlphabet) {
-            return number;
-        }
-
-        for (i = 0; i < length; i++) {
-            numberMap[i] = this.srcAlphabet.indexOf(number[i]);
-        }
-        do {
-            divide = 0;
-            newlen = 0;
-            for (i = 0; i < length; i++) {
-                divide = divide * fromBase + numberMap[i];
-                if (divide >= toBase) {
-                    numberMap[newlen++] = parseInt(divide / toBase, 10);
-                    divide = divide % toBase;
-                } else if (newlen > 0) {
-                    numberMap[newlen++] = 0;
-                }
-            }
-            length = newlen;
-            result = this.dstAlphabet.slice(divide, divide + 1).concat(result);
-        } while (newlen !== 0);
-
-        return result;
-    };
-
-    /**
-     * Valid number with source alphabet
-     *
-     * @param {number} number
-     *
-     * @returns {boolean}
-     */
-    Converter.prototype.isValid = function(number) {
-        var i = 0;
-        for (; i < number.length; ++i) {
-            if (this.srcAlphabet.indexOf(number[i]) === -1) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    var converter = Converter;
-
-    /**
-     * Function get source and destination alphabet and return convert function
-     *
-     * @param {string|Array} srcAlphabet
-     * @param {string|Array} dstAlphabet
-     *
-     * @returns {function(number|Array)}
-     */
-    function anyBase(srcAlphabet, dstAlphabet) {
-        var converter$1 = new converter(srcAlphabet, dstAlphabet);
-        /**
-         * Convert function
-         *
-         * @param {string|Array} number
-         *
-         * @return {string|Array} number
-         */
-        return function (number) {
-            return converter$1.convert(number);
-        }
-    }
-    anyBase.BIN = '01';
-    anyBase.OCT = '01234567';
-    anyBase.DEC = '0123456789';
-    anyBase.HEX = '0123456789abcdef';
-
-    var anyBase_1 = anyBase;
-
-    function getAugmentedNamespace(n) {
-    	if (n.__esModule) return n;
-    	var a = Object.defineProperty({}, '__esModule', {value: true});
-    	Object.keys(n).forEach(function (k) {
-    		var d = Object.getOwnPropertyDescriptor(n, k);
-    		Object.defineProperty(a, k, d.get ? d : {
-    			enumerable: true,
-    			get: function () {
-    				return n[k];
-    			}
-    		});
-    	});
-    	return a;
-    }
-
-    var require$$0 = /*@__PURE__*/getAugmentedNamespace(esmBrowser);
-
-    /**
-     * Created by Samuel on 6/4/2016.
-     * Simple wrapper functions to produce shorter UUIDs for cookies, maybe everything?
-     */
-
-    const { v4: uuidv4 } = require$$0;
-
-
-    const flickrBase58 = '123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
-    const cookieBase90 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&'()*+-./:<=>?@[]^_`{|}~";
-
-    const baseOptions = {
-      consistentLength: true,
-    };
-
-    // A default generator, instantiated only if used.
-    let toFlickr;
-
-    /**
-     * Takes a UUID, strips the dashes, and translates.
-     * @param {string} longId
-     * @param {function(string)} translator
-     * @param {Object} [paddingParams]
-     * @returns {string}
-     */
-    const shortenUUID = (longId, translator, paddingParams) => {
-      const translated = translator(longId.toLowerCase().replace(/-/g, ''));
-
-      if (!paddingParams || !paddingParams.consistentLength) return translated;
-
-      return translated.padStart(
-        paddingParams.shortIdLength,
-        paddingParams.paddingChar,
-      );
-    };
-
-    /**
-     * Translate back to hex and turn back into UUID format, with dashes
-     * @param {string} shortId
-     * @param {function(string)} translator
-     * @returns {string}
-     */
-    const enlargeUUID = (shortId, translator) => {
-      const uu1 = translator(shortId).padStart(32, '0');
-
-      // Join the zero padding and the UUID and then slice it up with match
-      const m = uu1.match(/(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})/);
-
-      // Accumulate the matches and join them.
-      return [m[1], m[2], m[3], m[4], m[5]].join('-');
-    };
-
-    // Calculate length for the shortened ID
-    const getShortIdLength = (alphabetLength) => (
-      Math.ceil(Math.log(2 ** 128) / Math.log(alphabetLength)));
-
-    var shortUuid = (() => {
-      /**
-       * @param {string} toAlphabet - Defaults to flickrBase58 if not provided
-       * @param {Object} [options]
-       *
-       * @returns {{new: (function()),
-       *  uuid: (function()),
-       *  fromUUID: (function(string)),
-       *  toUUID: (function(string)),
-       *  alphabet: (string)}}
-       */
-      const makeConvertor = (toAlphabet, options) => {
-        // Default to Flickr 58
-        const useAlphabet = toAlphabet || flickrBase58;
-
-        // Default to baseOptions
-        const selectedOptions = { ...baseOptions, ...options };
-
-        // Check alphabet for duplicate entries
-        if ([...new Set(Array.from(useAlphabet))].length !== useAlphabet.length) {
-          throw new Error('The provided Alphabet has duplicate characters resulting in unreliable results');
-        }
-
-        const shortIdLength = getShortIdLength(useAlphabet.length);
-
-        // Padding Params
-        const paddingParams = {
-          shortIdLength,
-          consistentLength: selectedOptions.consistentLength,
-          paddingChar: useAlphabet[0],
-        };
-
-        // UUIDs are in hex, so we translate to and from.
-        const fromHex = anyBase_1(anyBase_1.HEX, useAlphabet);
-        const toHex = anyBase_1(useAlphabet, anyBase_1.HEX);
-        const generate = () => shortenUUID(uuidv4(), fromHex, paddingParams);
-
-        const translator = {
-          new: generate,
-          generate,
-          uuid: uuidv4,
-          fromUUID: (uuid) => shortenUUID(uuid, fromHex, paddingParams),
-          toUUID: (shortUuid) => enlargeUUID(shortUuid, toHex),
-          alphabet: useAlphabet,
-          maxLength: shortIdLength,
-        };
-
-        Object.freeze(translator);
-
-        return translator;
-      };
-
-      // Expose the constants for other purposes.
-      makeConvertor.constants = {
-        flickrBase58,
-        cookieBase90,
-      };
-
-      // Expose the generic v4 UUID generator for convenience
-      makeConvertor.uuid = uuidv4;
-
-      // Provide a generic generator
-      makeConvertor.generate = () => {
-        if (!toFlickr) {
-          // Generate on first use;
-          toFlickr = makeConvertor(flickrBase58).generate;
-        }
-        return toFlickr();
-      };
-
-      return makeConvertor;
-    })();
 
     /* src/StepChild.svelte generated by Svelte v3.44.0 */
     const file$6 = "src/StepChild.svelte";
