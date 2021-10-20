@@ -21,13 +21,21 @@
   import Sections from './Sections.svelte';
 
   let hasSections = $sections.length > 0 ? true : false
+  let tmpSections
   const clearSections = () => {
+    tmpSections = $sections
+    $sections = null
     hasSections = false
+    console.log(tmpSections)
     console.log('remove sections, repace with steps')
+  }
+  const resetSections = () => {
+    $sections = tmpSections
+    hasSections = true
   }
   const handleSections = (e) => {
     e.target.checked
-      ? hasSections = true
+      ? resetSections()
       : clearSections()
   }
 

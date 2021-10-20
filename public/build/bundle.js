@@ -933,7 +933,7 @@ var app = (function () {
         totalTime,
         // tool: mapDependencies('HowToTool')(tools),
         // supply: mapDependencies('HowToSupply')(supplies),
-        "step": mapSections(sections)
+        "step": sections ? mapSections(sections) : mapSteps(steps)
       })
     };
 
@@ -4160,7 +4160,7 @@ ${JSON.stringify(
     const { console: console_1 } = globals;
     const file$1 = "src/SchemaForm.svelte";
 
-    // (94:2) {:else}
+    // (102:2) {:else}
     function create_else_block(ctx) {
     	let steps_1;
     	let current;
@@ -4192,14 +4192,14 @@ ${JSON.stringify(
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(94:2) {:else}",
+    		source: "(102:2) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (92:2) {#if hasSections}
+    // (100:2) {#if hasSections}
     function create_if_block(ctx) {
     	let sections_1;
     	let current;
@@ -4231,7 +4231,7 @@ ${JSON.stringify(
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(92:2) {#if hasSections}",
+    		source: "(100:2) {#if hasSections}",
     		ctx
     	});
 
@@ -4315,43 +4315,43 @@ ${JSON.stringify(
     			attr_dev(input0, "type", "text");
     			attr_dev(input0, "name", "name");
     			attr_dev(input0, "class", "svelte-ayxrk9");
-    			add_location(input0, file$1, 38, 4, 723);
+    			add_location(input0, file$1, 46, 4, 903);
     			attr_dev(label0, "class", "svelte-ayxrk9");
-    			add_location(label0, file$1, 36, 2, 701);
+    			add_location(label0, file$1, 44, 2, 881);
     			attr_dev(textarea, "type", "text");
     			attr_dev(textarea, "name", "description");
     			attr_dev(textarea, "class", "svelte-ayxrk9");
-    			add_location(textarea, file$1, 46, 4, 839);
+    			add_location(textarea, file$1, 54, 4, 1019);
     			attr_dev(label1, "class", "svelte-ayxrk9");
-    			add_location(label1, file$1, 44, 2, 810);
+    			add_location(label1, file$1, 52, 2, 990);
     			attr_dev(input1, "type", "text");
     			attr_dev(input1, "name", "preptime");
     			attr_dev(input1, "class", "svelte-ayxrk9");
-    			add_location(input1, file$1, 54, 4, 971);
+    			add_location(input1, file$1, 62, 4, 1151);
     			attr_dev(label2, "class", "svelte-ayxrk9");
-    			add_location(label2, file$1, 52, 2, 944);
+    			add_location(label2, file$1, 60, 2, 1124);
     			attr_dev(input2, "type", "text");
     			attr_dev(input2, "name", "performTime");
     			attr_dev(input2, "class", "svelte-ayxrk9");
-    			add_location(input2, file$1, 62, 4, 1096);
+    			add_location(input2, file$1, 70, 4, 1276);
     			attr_dev(label3, "class", "svelte-ayxrk9");
-    			add_location(label3, file$1, 60, 2, 1066);
+    			add_location(label3, file$1, 68, 2, 1246);
     			attr_dev(input3, "type", "text");
     			attr_dev(input3, "name", "totalTime");
     			attr_dev(input3, "class", "svelte-ayxrk9");
-    			add_location(input3, file$1, 70, 4, 1225);
+    			add_location(input3, file$1, 78, 4, 1405);
     			attr_dev(label4, "class", "svelte-ayxrk9");
-    			add_location(label4, file$1, 68, 2, 1197);
+    			add_location(label4, file$1, 76, 2, 1377);
     			attr_dev(input4, "type", "checkbox");
     			attr_dev(input4, "name", "useSection");
     			input4.checked = /*hasSections*/ ctx[0];
     			attr_dev(input4, "class", "svelte-ayxrk9");
-    			add_location(input4, file$1, 82, 6, 1380);
+    			add_location(input4, file$1, 90, 6, 1560);
     			attr_dev(label5, "class", "svelte-ayxrk9");
-    			add_location(label5, file$1, 80, 4, 1343);
+    			add_location(label5, file$1, 88, 4, 1523);
     			attr_dev(p, "class", "svelte-ayxrk9");
-    			add_location(p, file$1, 77, 2, 1323);
-    			add_location(form, file$1, 35, 0, 692);
+    			add_location(p, file$1, 85, 2, 1503);
+    			add_location(form, file$1, 43, 0, 872);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4488,7 +4488,7 @@ ${JSON.stringify(
     	let $performTime;
     	let $totalTime;
     	validate_store(sections, 'sections');
-    	component_subscribe($$self, sections, $$value => $$invalidate(12, $sections = $$value));
+    	component_subscribe($$self, sections, $$value => $$invalidate(13, $sections = $$value));
     	validate_store(name, 'name');
     	component_subscribe($$self, name, $$value => $$invalidate(1, $name = $$value));
     	validate_store(description, 'description');
@@ -4502,16 +4502,23 @@ ${JSON.stringify(
     	let { $$slots: slots = {}, $$scope } = $$props;
     	validate_slots('SchemaForm', slots, []);
     	let hasSections = $sections.length > 0 ? true : false;
+    	let tmpSections;
 
     	const clearSections = () => {
+    		tmpSections = $sections;
+    		set_store_value(sections, $sections = null, $sections);
     		$$invalidate(0, hasSections = false);
+    		console.log(tmpSections);
     		console.log('remove sections, repace with steps');
     	};
 
+    	const resetSections = () => {
+    		set_store_value(sections, $sections = tmpSections, $sections);
+    		$$invalidate(0, hasSections = true);
+    	};
+
     	const handleSections = e => {
-    		e.target.checked
-    		? $$invalidate(0, hasSections = true)
-    		: clearSections();
+    		e.target.checked ? resetSections() : clearSections();
     	};
 
     	const writable_props = [];
@@ -4563,7 +4570,9 @@ ${JSON.stringify(
     		Steps,
     		Sections,
     		hasSections,
+    		tmpSections,
     		clearSections,
+    		resetSections,
     		handleSections,
     		$sections,
     		$name,
@@ -4575,6 +4584,7 @@ ${JSON.stringify(
 
     	$$self.$inject_state = $$props => {
     		if ('hasSections' in $$props) $$invalidate(0, hasSections = $$props.hasSections);
+    		if ('tmpSections' in $$props) tmpSections = $$props.tmpSections;
     	};
 
     	if ($$props && "$$inject" in $$props) {

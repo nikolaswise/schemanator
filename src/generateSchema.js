@@ -115,6 +115,6 @@ export const generateSchema = ({
     totalTime,
     // tool: mapDependencies('HowToTool')(tools),
     // supply: mapDependencies('HowToSupply')(supplies),
-    "step": mapSections(sections)
+    "step": sections ? mapSections(sections) : mapSteps(steps)
   })
 }
