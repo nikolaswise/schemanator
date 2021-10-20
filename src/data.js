@@ -12,8 +12,7 @@ export const totalTime = writable('')
 export const tools = writable([])
 export const supplies = writable([])
 
-export const sections = writable([])
-export const steps = writable([
+const sample_steps = [
   {
     id: 'osfnd',
     children: [
@@ -58,4 +57,11 @@ export const steps = writable([
       }
     ]
   }
-])
+]
+
+export const sections = writable([{
+  id: '09esgjs',
+  name: 'Penciling an Owl',
+  steps: sample_steps
+}])
+export const steps = writable(sample_steps)

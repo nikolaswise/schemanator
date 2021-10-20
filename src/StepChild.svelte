@@ -89,7 +89,7 @@
   .child {
     border-top: 1px solid var(--dark-gray);
     padding-top: 1rem;
-    padding-bottom: 1rem;
+    padding-bottom: 0rem;
   }
   .inline {
     display: inline;

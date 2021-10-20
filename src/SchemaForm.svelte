@@ -17,16 +17,18 @@
     steps,
   } from './data'
 
-  import StepGroup from './StepGroup.svelte';
+  import Steps from './Steps.svelte';
+  import Sections from './Sections.svelte';
 
-  const flipDurationMs = 300;
-
-  function handleDndConsider(e) {
-    $steps = e.detail.items;
+  let hasSections = $sections.length > 0 ? true : false
+  const clearSections = () => {
+    hasSections = false
+    console.log('remove sections, repace with steps')
   }
-
-  function handleDndFinalize(e) {
-    $steps = e.detail.items;
+  const handleSections = (e) => {
+    e.target.checked
+      ? hasSections = true
+      : clearSections()
   }
 
 </script>
@@ -75,22 +77,23 @@
 
   <p>
     Steps:
+
+    <label>
+      Group by Section
+      <input
+        type="checkbox"
+        name="useSection"
+        on:change={handleSections}
+        checked={hasSections}
+      >
+    </label>
   </p>
 
-  <div
-    use:dndzone="{{items: $steps, flipDurationMs}}"
-    on:consider="{handleDndConsider}"
-    on:finalize="{handleDndFinalize}"
-  >
-    {#each $steps as step(step.id)}
-      <div
-        class="draggable"
-        animate:flip="{{duration: flipDurationMs}}"
-      >
-        <StepGroup bind:step={step} />
-      </div>
-    {/each}
-  </div>
+  {#if hasSections}
+    <Sections />
+  {:else}
+    <Steps />
+  {/if}
 
 </form>
 
@@ -113,10 +116,18 @@
   textarea {
     resize: vertical;
   }
-  .draggable {
-    cursor: grab;
+  p {
+    display: flex;
+    justify-content: space-between;
   }
-  .draggable:active {
-    cursor: grabbing;
+  p label {
+    display: inline-block;
+    margin-bottom: 0;
+  }
+  p input {
+    display: inline;
+    width: auto;
+    margin-top: 0;
+    margin-bottom: 0;
   }
 </style>
