@@ -2,9 +2,12 @@
   import {flip} from "svelte/animate";
   import {dndzone} from "svelte-dnd-action";
   import short from "short-uuid"
+  import { createEventDispatcher } from 'svelte';
+
   import StepChild from './StepChild.svelte'
   export let step
 
+  const dispatch = createEventDispatcher();
   const flipDurationMs = 300;
 
   function handleDndConsider(e) {
@@ -25,10 +28,26 @@
     }]
   }
 
+  const handleDeleteChild = (e) => {
+    step.children = step.children.filter(child => {
+      return child.id !== e
+    })
+  }
+
+  const deleteStep = (e) => {
+    e.preventDefault()
+    dispatch('delete', {id: step.id})
+  }
+
 </script>
 
 <div class="step-group">
-  <p>≡ Step:</p>
+  <div class="group-header">
+    <p>≡ Step:</p>
+    <button on:click={deleteStep}>
+      Delete Step
+    </button>
+  </div>
   <div
     use:dndzone="{{
       items: step.children,
@@ -38,7 +57,10 @@
     on:finalize="{handleDndFinalize}"
   >
     {#each step.children as child(child.id)}
-      <StepChild child={child} />
+      <StepChild
+        on:delete={handleDeleteChild(child.id)}
+        child={child}
+      />
     {/each}
   </div>
   <button on:click={createNewChild}>
@@ -52,6 +74,11 @@
   }
   .draggable:active {
     cursor: grabbing;
+  }
+  .group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .step-group {
     border: 1px solid var(--dark-gray);

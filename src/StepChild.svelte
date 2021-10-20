@@ -1,4 +1,7 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
+
   export let child
 
   let hasImage = child.image ? true : false
@@ -13,6 +16,12 @@
     e.target.checked
       ? hasImage = true
       : clearImage()
+  }
+
+  const deleteChild = (e) => {
+    e.preventDefault()
+    console.log(`delete this sweet child ${child.id}`)
+    dispatch('delete', {id: child.id})
   }
 </script>
 
@@ -57,6 +66,11 @@
       />
     </label>
   {/if}
+  <div class="right">
+    <button on:click={deleteChild}>
+      Delete
+    </button>
+  </div>
 </div>
 
 <style>
@@ -93,5 +107,8 @@
   }
   .inline {
     display: inline;
+  }
+  .right {
+    text-align: right;
   }
 </style>

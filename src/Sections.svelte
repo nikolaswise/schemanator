@@ -28,6 +28,13 @@
     }]
   }
 
+  const handleSectionDelete = (e) => {
+    console.log(`delete that section ${e}`)
+    $sections = $sections.filter(section => {
+      return section.id !== e
+    })
+  }
+
 </script>
 
 <div
@@ -52,7 +59,11 @@
           name="sectionName"
         >
       </label>
-      <Steps bind:sectionSteps={section.steps}/>
+      <Steps
+        on:delete={handleSectionDelete(section.id)}
+        bind:sectionSteps={section.steps}
+      }
+      />
     </div>
   {/each}
 </div>

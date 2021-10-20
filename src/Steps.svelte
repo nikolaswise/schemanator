@@ -2,6 +2,7 @@
   import {flip} from "svelte/animate";
   import {dndzone} from "svelte-dnd-action";
   import short from "short-uuid"
+  import { createEventDispatcher } from 'svelte';
 
   import {
     steps,
@@ -9,8 +10,10 @@
 
   import StepGroup from './StepGroup.svelte';
 
+
   export let sectionSteps
 
+  const dispatch = createEventDispatcher();
   let array = sectionSteps ? sectionSteps : $steps;
 
   const flipDurationMs = 300;
@@ -35,6 +38,18 @@
     }]
   }
 
+  const handleDeleteStep = (e) => {
+    array = array.filter(step => {
+      return step.id !== e
+    })
+  }
+
+  const deleteSection = (e) => {
+    e.preventDefault()
+    console.log(`delete this section`)
+    dispatch('delete')
+  }
+
   $: {
     sectionSteps
       ? sectionSteps = array
@@ -56,13 +71,25 @@
       class="draggable"
       animate:flip="{{duration: flipDurationMs}}"
     >
-      <StepGroup bind:step={step} />
+      <StepGroup
+        on:delete={handleDeleteStep(step.id)}
+        bind:step={step}
+      />
     </div>
   {/each}
 </div>
-<button on:click={createNewStep}>
-  Add Step
-</button>
+
+<div class="section-footer">
+  <button on:click={createNewStep}>
+    Add Step
+  </button>
+
+  {#if sectionSteps}
+    <button on:click={deleteSection}>
+      Delete Section
+    </button>
+  {/if}
+</div>
 
 <style>
   .draggable {
@@ -70,5 +97,9 @@
   }
   .draggable:active {
     cursor: grabbing;
+  }
+  .section-footer {
+    display: flex;
+    justify-content: space-between;
   }
 </style>
