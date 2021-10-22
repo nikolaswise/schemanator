@@ -42,7 +42,10 @@
 
 </script>
 
-<form>
+<form action=''>
+  <button>
+    Reset
+  </button>
   <label>
     Name:
     <input

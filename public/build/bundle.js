@@ -6383,7 +6383,7 @@ ${JSON.stringify(
     const { console: console_1 } = globals;
     const file$1 = "src/SchemaForm.svelte";
 
-    // (117:2) {:else}
+    // (120:2) {:else}
     function create_else_block(ctx) {
     	let steps_1;
     	let current;
@@ -6415,14 +6415,14 @@ ${JSON.stringify(
     		block,
     		id: create_else_block.name,
     		type: "else",
-    		source: "(117:2) {:else}",
+    		source: "(120:2) {:else}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (115:2) {#if hasSections}
+    // (118:2) {#if hasSections}
     function create_if_block(ctx) {
     	let sections_1;
     	let current;
@@ -6454,7 +6454,7 @@ ${JSON.stringify(
     		block,
     		id: create_if_block.name,
     		type: "if",
-    		source: "(115:2) {#if hasSections}",
+    		source: "(118:2) {#if hasSections}",
     		ctx
     	});
 
@@ -6463,44 +6463,46 @@ ${JSON.stringify(
 
     function create_fragment$1(ctx) {
     	let form;
-    	let label0;
-    	let t0;
-    	let input0;
+    	let button;
     	let t1;
-    	let label1;
+    	let label0;
     	let t2;
-    	let textarea;
+    	let input0;
     	let t3;
-    	let label2;
+    	let label1;
     	let t4;
-    	let input1;
+    	let textarea;
     	let t5;
-    	let label3;
+    	let label2;
     	let t6;
-    	let input2;
+    	let input1;
     	let t7;
-    	let label4;
+    	let label3;
     	let t8;
-    	let input3;
+    	let input2;
     	let t9;
-    	let p0;
+    	let label4;
+    	let t10;
+    	let input3;
     	let t11;
+    	let p0;
+    	let t13;
     	let materials0;
     	let updating_items;
-    	let t12;
-    	let p1;
     	let t14;
+    	let p1;
+    	let t16;
     	let materials1;
     	let updating_items_1;
-    	let t15;
-    	let p2;
     	let t17;
-    	let p3;
-    	let t18;
-    	let label5;
+    	let p2;
     	let t19;
-    	let input4;
+    	let p3;
     	let t20;
+    	let label5;
+    	let t21;
+    	let input4;
+    	let t22;
     	let current_block_type_index;
     	let if_block;
     	let current;
@@ -6546,91 +6548,96 @@ ${JSON.stringify(
     	const block = {
     		c: function create() {
     			form = element("form");
-    			label0 = element("label");
-    			t0 = text("Name:\n    ");
-    			input0 = element("input");
+    			button = element("button");
+    			button.textContent = "Reset";
     			t1 = space();
-    			label1 = element("label");
-    			t2 = text("Description:\n    ");
-    			textarea = element("textarea");
+    			label0 = element("label");
+    			t2 = text("Name:\n    ");
+    			input0 = element("input");
     			t3 = space();
-    			label2 = element("label");
-    			t4 = text("Prep Time:\n    ");
-    			input1 = element("input");
+    			label1 = element("label");
+    			t4 = text("Description:\n    ");
+    			textarea = element("textarea");
     			t5 = space();
-    			label3 = element("label");
-    			t6 = text("Perform Time:\n    ");
-    			input2 = element("input");
+    			label2 = element("label");
+    			t6 = text("Prep Time:\n    ");
+    			input1 = element("input");
     			t7 = space();
-    			label4 = element("label");
-    			t8 = text("Total Time:\n    ");
-    			input3 = element("input");
+    			label3 = element("label");
+    			t8 = text("Perform Time:\n    ");
+    			input2 = element("input");
     			t9 = space();
+    			label4 = element("label");
+    			t10 = text("Total Time:\n    ");
+    			input3 = element("input");
+    			t11 = space();
     			p0 = element("p");
     			p0.textContent = "Tools:";
-    			t11 = space();
+    			t13 = space();
     			create_component(materials0.$$.fragment);
-    			t12 = space();
+    			t14 = space();
     			p1 = element("p");
     			p1.textContent = "Supplies:";
-    			t14 = space();
+    			t16 = space();
     			create_component(materials1.$$.fragment);
-    			t15 = space();
+    			t17 = space();
     			p2 = element("p");
     			p2.textContent = "Supplies:";
-    			t17 = space();
+    			t19 = space();
     			p3 = element("p");
-    			t18 = text("Steps:\n\n    ");
+    			t20 = text("Steps:\n\n    ");
     			label5 = element("label");
-    			t19 = text("Group by Section\n      ");
+    			t21 = text("Group by Section\n      ");
     			input4 = element("input");
-    			t20 = space();
+    			t22 = space();
     			if_block.c();
+    			add_location(button, file$1, 45, 2, 937);
     			attr_dev(input0, "type", "text");
     			attr_dev(input0, "name", "name");
     			attr_dev(input0, "class", "svelte-ayxrk9");
-    			add_location(input0, file$1, 47, 4, 949);
+    			add_location(input0, file$1, 50, 4, 992);
     			attr_dev(label0, "class", "svelte-ayxrk9");
-    			add_location(label0, file$1, 45, 2, 927);
+    			add_location(label0, file$1, 48, 2, 970);
     			attr_dev(textarea, "type", "text");
     			attr_dev(textarea, "name", "description");
     			attr_dev(textarea, "class", "svelte-ayxrk9");
-    			add_location(textarea, file$1, 55, 4, 1065);
+    			add_location(textarea, file$1, 58, 4, 1108);
     			attr_dev(label1, "class", "svelte-ayxrk9");
-    			add_location(label1, file$1, 53, 2, 1036);
+    			add_location(label1, file$1, 56, 2, 1079);
     			attr_dev(input1, "type", "text");
     			attr_dev(input1, "name", "preptime");
     			attr_dev(input1, "class", "svelte-ayxrk9");
-    			add_location(input1, file$1, 63, 4, 1197);
+    			add_location(input1, file$1, 66, 4, 1240);
     			attr_dev(label2, "class", "svelte-ayxrk9");
-    			add_location(label2, file$1, 61, 2, 1170);
+    			add_location(label2, file$1, 64, 2, 1213);
     			attr_dev(input2, "type", "text");
     			attr_dev(input2, "name", "performTime");
     			attr_dev(input2, "class", "svelte-ayxrk9");
-    			add_location(input2, file$1, 71, 4, 1322);
+    			add_location(input2, file$1, 74, 4, 1365);
     			attr_dev(label3, "class", "svelte-ayxrk9");
-    			add_location(label3, file$1, 69, 2, 1292);
+    			add_location(label3, file$1, 72, 2, 1335);
     			attr_dev(input3, "type", "text");
     			attr_dev(input3, "name", "totalTime");
     			attr_dev(input3, "class", "svelte-ayxrk9");
-    			add_location(input3, file$1, 79, 4, 1451);
+    			add_location(input3, file$1, 82, 4, 1494);
     			attr_dev(label4, "class", "svelte-ayxrk9");
-    			add_location(label4, file$1, 77, 2, 1423);
+    			add_location(label4, file$1, 80, 2, 1466);
     			attr_dev(p0, "class", "svelte-ayxrk9");
-    			add_location(p0, file$1, 86, 2, 1549);
+    			add_location(p0, file$1, 89, 2, 1592);
     			attr_dev(p1, "class", "svelte-ayxrk9");
-    			add_location(p1, file$1, 91, 2, 1609);
+    			add_location(p1, file$1, 94, 2, 1652);
     			attr_dev(p2, "class", "svelte-ayxrk9");
-    			add_location(p2, file$1, 96, 2, 1675);
+    			add_location(p2, file$1, 99, 2, 1718);
     			attr_dev(input4, "type", "checkbox");
     			attr_dev(input4, "name", "useSection");
     			input4.checked = /*hasSections*/ ctx[0];
     			attr_dev(input4, "class", "svelte-ayxrk9");
-    			add_location(input4, file$1, 105, 6, 1760);
+    			add_location(input4, file$1, 108, 6, 1803);
     			attr_dev(label5, "class", "svelte-ayxrk9");
-    			add_location(label5, file$1, 103, 4, 1723);
+    			add_location(label5, file$1, 106, 4, 1766);
     			attr_dev(p3, "class", "svelte-ayxrk9");
-    			add_location(p3, file$1, 100, 2, 1703);
+    			add_location(p3, file$1, 103, 2, 1746);
+    			attr_dev(form, "action", "");
     			add_location(form, file$1, 44, 0, 918);
     		},
     		l: function claim(nodes) {
@@ -6638,47 +6645,49 @@ ${JSON.stringify(
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, form, anchor);
+    			append_dev(form, button);
+    			append_dev(form, t1);
     			append_dev(form, label0);
-    			append_dev(label0, t0);
+    			append_dev(label0, t2);
     			append_dev(label0, input0);
     			set_input_value(input0, /*$name*/ ctx[1]);
-    			append_dev(form, t1);
+    			append_dev(form, t3);
     			append_dev(form, label1);
-    			append_dev(label1, t2);
+    			append_dev(label1, t4);
     			append_dev(label1, textarea);
     			set_input_value(textarea, /*$description*/ ctx[2]);
-    			append_dev(form, t3);
+    			append_dev(form, t5);
     			append_dev(form, label2);
-    			append_dev(label2, t4);
+    			append_dev(label2, t6);
     			append_dev(label2, input1);
     			set_input_value(input1, /*$prepTime*/ ctx[3]);
-    			append_dev(form, t5);
+    			append_dev(form, t7);
     			append_dev(form, label3);
-    			append_dev(label3, t6);
+    			append_dev(label3, t8);
     			append_dev(label3, input2);
     			set_input_value(input2, /*$performTime*/ ctx[4]);
-    			append_dev(form, t7);
+    			append_dev(form, t9);
     			append_dev(form, label4);
-    			append_dev(label4, t8);
+    			append_dev(label4, t10);
     			append_dev(label4, input3);
     			set_input_value(input3, /*$totalTime*/ ctx[5]);
-    			append_dev(form, t9);
-    			append_dev(form, p0);
     			append_dev(form, t11);
+    			append_dev(form, p0);
+    			append_dev(form, t13);
     			mount_component(materials0, form, null);
-    			append_dev(form, t12);
-    			append_dev(form, p1);
     			append_dev(form, t14);
+    			append_dev(form, p1);
+    			append_dev(form, t16);
     			mount_component(materials1, form, null);
-    			append_dev(form, t15);
-    			append_dev(form, p2);
     			append_dev(form, t17);
+    			append_dev(form, p2);
+    			append_dev(form, t19);
     			append_dev(form, p3);
-    			append_dev(p3, t18);
+    			append_dev(p3, t20);
     			append_dev(p3, label5);
-    			append_dev(label5, t19);
+    			append_dev(label5, t21);
     			append_dev(label5, input4);
-    			append_dev(form, t20);
+    			append_dev(form, t22);
     			if_blocks[current_block_type_index].m(form, null);
     			current = true;
 
