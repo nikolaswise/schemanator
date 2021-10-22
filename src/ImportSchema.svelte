@@ -69,6 +69,8 @@
     }
 
     const populateSteps = (step) => {
+      console.log(step)
+      console.log(step.itemListElement)
       return {
         id: short.generate(),
         children: step.itemListElement.map(populateNodes)
@@ -85,10 +87,8 @@
           steps: section.itemListElement.map(populateSteps)
         }
       })
-    } else {
-      $steps = populateSteps(json.step)
     }
-
+    $steps = json.step.map(populateSteps)
   }
 </script>
 

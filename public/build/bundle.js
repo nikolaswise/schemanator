@@ -1812,17 +1812,17 @@ var app = (function () {
     			button1.textContent = "cancel";
     			attr_dev(textarea, "rows", "10");
     			attr_dev(textarea, "class", "svelte-1upxmbv");
-    			add_location(textarea, file$8, 103, 8, 2217);
+    			add_location(textarea, file$8, 103, 8, 2269);
     			attr_dev(label, "class", "svelte-1upxmbv");
-    			add_location(label, file$8, 101, 6, 2178);
-    			add_location(button0, file$8, 109, 8, 2337);
-    			add_location(button1, file$8, 112, 8, 2411);
+    			add_location(label, file$8, 101, 6, 2230);
+    			add_location(button0, file$8, 109, 8, 2389);
+    			add_location(button1, file$8, 112, 8, 2463);
     			attr_dev(div0, "class", "footer svelte-1upxmbv");
-    			add_location(div0, file$8, 108, 6, 2308);
+    			add_location(div0, file$8, 108, 6, 2360);
     			attr_dev(div1, "class", "modal svelte-1upxmbv");
-    			add_location(div1, file$8, 100, 4, 2152);
+    			add_location(div1, file$8, 100, 4, 2204);
     			attr_dev(div2, "class", "screen svelte-1upxmbv");
-    			add_location(div2, file$8, 99, 2, 2127);
+    			add_location(div2, file$8, 99, 2, 2179);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div2, anchor);
@@ -1885,7 +1885,7 @@ var app = (function () {
     			t1 = space();
     			if (if_block) if_block.c();
     			if_block_anchor = empty();
-    			add_location(button, file$8, 94, 0, 2047);
+    			add_location(button, file$8, 94, 0, 2099);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -2035,6 +2035,9 @@ var app = (function () {
     		};
 
     		const populateSteps = step => {
+    			console.log(step);
+    			console.log(step.itemListElement);
+
     			return {
     				id: shortUuid.generate(),
     				children: step.itemListElement.map(populateNodes)
@@ -2057,9 +2060,9 @@ var app = (function () {
     				}),
     				$sections
     			);
-    		} else {
-    			set_store_value(steps, $steps = populateSteps(json.step), $steps);
     		}
+
+    		set_store_value(steps, $steps = json.step.map(populateSteps), $steps);
     	};
 
     	const writable_props = [];
