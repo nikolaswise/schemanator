@@ -34,7 +34,12 @@
     array = [...array, {
       id: short.generate(),
       name: '',
-      children: []
+      children: [{
+        id: short.generate(),
+        text: "",
+        type: "HowToDirection",
+        image: null,
+      }]
     }]
   }
 

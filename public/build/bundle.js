@@ -4358,13 +4358,13 @@ ${JSON.stringify(
     			if_block.c();
     			attr_dev(input, "type", "text");
     			attr_dev(input, "class", "svelte-10epvtl");
-    			add_location(input, file$6, 61, 8, 1120);
+    			add_location(input, file$6, 61, 8, 1122);
     			attr_dev(label, "class", "svelte-10epvtl");
-    			add_location(label, file$6, 59, 6, 1085);
+    			add_location(label, file$6, 59, 6, 1087);
     			attr_dev(figure, "class", "svelte-10epvtl");
-    			add_location(figure, file$6, 66, 6, 1216);
+    			add_location(figure, file$6, 66, 6, 1218);
     			attr_dev(div, "class", "image-preview svelte-10epvtl");
-    			add_location(div, file$6, 58, 4, 1051);
+    			add_location(div, file$6, 58, 4, 1053);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, div, anchor);
@@ -4455,7 +4455,7 @@ ${JSON.stringify(
     			img = element("img");
     			if (!src_url_equal(img.src, img_src_value = /*child*/ ctx[0].image)) attr_dev(img, "src", img_src_value);
     			attr_dev(img, "class", "svelte-10epvtl");
-    			add_location(img, file$6, 68, 10, 1261);
+    			add_location(img, file$6, 68, 10, 1263);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, img, anchor);
@@ -4510,7 +4510,7 @@ ${JSON.stringify(
     			div2 = element("div");
     			div0 = element("div");
     			label0 = element("label");
-    			t0 = text("Type:\n      ");
+    			t0 = text("≡ Type:\n      ");
     			select = element("select");
     			option0 = element("option");
     			option0.textContent = "Direction\n        ";
@@ -4532,31 +4532,31 @@ ${JSON.stringify(
     			button.textContent = "Delete";
     			option0.__value = "HowToDirection";
     			option0.value = option0.__value;
-    			add_location(option0, file$6, 30, 8, 570);
+    			add_location(option0, file$6, 30, 8, 572);
     			option1.__value = "HowToTip";
     			option1.value = option1.__value;
-    			add_location(option1, file$6, 33, 8, 648);
+    			add_location(option1, file$6, 33, 8, 650);
     			if (/*child*/ ctx[0].type === void 0) add_render_callback(() => /*select_change_handler*/ ctx[4].call(select));
-    			add_location(select, file$6, 29, 6, 529);
+    			add_location(select, file$6, 29, 6, 531);
     			attr_dev(label0, "class", "svelte-10epvtl");
     			add_location(label0, file$6, 27, 4, 503);
     			input.checked = /*hasImage*/ ctx[1];
     			attr_dev(input, "type", "checkbox");
     			attr_dev(input, "name", "hasImage");
     			attr_dev(input, "class", "svelte-10epvtl");
-    			add_location(input, file$6, 40, 6, 784);
+    			add_location(input, file$6, 40, 6, 786);
     			attr_dev(label1, "class", "inline svelte-10epvtl");
-    			add_location(label1, file$6, 38, 4, 739);
+    			add_location(label1, file$6, 38, 4, 741);
     			attr_dev(div0, "class", "group svelte-10epvtl");
     			add_location(div0, file$6, 26, 2, 479);
     			attr_dev(textarea, "type", "text");
     			attr_dev(textarea, "class", "svelte-10epvtl");
-    			add_location(textarea, file$6, 51, 4, 953);
+    			add_location(textarea, file$6, 51, 4, 955);
     			attr_dev(label2, "class", "svelte-10epvtl");
-    			add_location(label2, file$6, 49, 2, 931);
-    			add_location(button, file$6, 76, 4, 1390);
+    			add_location(label2, file$6, 49, 2, 933);
+    			add_location(button, file$6, 76, 4, 1392);
     			attr_dev(div1, "class", "right svelte-10epvtl");
-    			add_location(div1, file$6, 75, 2, 1366);
+    			add_location(div1, file$6, 75, 2, 1368);
     			attr_dev(div2, "class", "child svelte-10epvtl");
     			add_location(div2, file$6, 25, 0, 457);
     		},
@@ -4868,14 +4868,14 @@ ${JSON.stringify(
     			button1 = element("button");
     			button1.textContent = "Add Item";
     			attr_dev(p, "class", "svelte-1tx6vat");
-    			add_location(p, file$5, 45, 4, 963);
-    			add_location(button0, file$5, 46, 4, 982);
+    			add_location(p, file$5, 45, 4, 957);
+    			add_location(button0, file$5, 46, 4, 976);
     			attr_dev(div0, "class", "group-header svelte-1tx6vat");
-    			add_location(div0, file$5, 44, 2, 932);
-    			add_location(div1, file$5, 50, 2, 1056);
-    			add_location(button1, file$5, 65, 2, 1413);
+    			add_location(div0, file$5, 44, 2, 926);
+    			add_location(div1, file$5, 50, 2, 1050);
+    			add_location(button1, file$5, 65, 2, 1407);
     			attr_dev(div2, "class", "step-group svelte-1tx6vat");
-    			add_location(div2, file$5, 43, 0, 905);
+    			add_location(div2, file$5, 43, 0, 899);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -4994,7 +4994,7 @@ ${JSON.stringify(
     				{
     					id: shortUuid.generate(),
     					text: '',
-    					type: 'HowToDirection',
+    					type: 'HowToTip',
     					image: null
     				}
     			],
@@ -5103,7 +5103,7 @@ ${JSON.stringify(
     	return child_ctx;
     }
 
-    // (69:2) {#each array as step(step.id)}
+    // (74:2) {#each array as step(step.id)}
     function create_each_block$2(key_1, ctx) {
     	let div;
     	let stepgroup;
@@ -5138,7 +5138,7 @@ ${JSON.stringify(
     			create_component(stepgroup.$$.fragment);
     			t = space();
     			attr_dev(div, "class", "draggable svelte-6libs6");
-    			add_location(div, file$4, 69, 4, 1318);
+    			add_location(div, file$4, 74, 4, 1428);
     			this.first = div;
     		},
     		m: function mount(target, anchor) {
@@ -5189,14 +5189,14 @@ ${JSON.stringify(
     		block,
     		id: create_each_block$2.name,
     		type: "each",
-    		source: "(69:2) {#each array as step(step.id)}",
+    		source: "(74:2) {#each array as step(step.id)}",
     		ctx
     	});
 
     	return block;
     }
 
-    // (87:2) {#if sectionSteps}
+    // (92:2) {#if sectionSteps}
     function create_if_block$2(ctx) {
     	let button;
     	let mounted;
@@ -5206,7 +5206,7 @@ ${JSON.stringify(
     		c: function create() {
     			button = element("button");
     			button.textContent = "Delete Section";
-    			add_location(button, file$4, 87, 4, 1645);
+    			add_location(button, file$4, 92, 4, 1755);
     		},
     		m: function mount(target, anchor) {
     			insert_dev(target, button, anchor);
@@ -5228,7 +5228,7 @@ ${JSON.stringify(
     		block,
     		id: create_if_block$2.name,
     		type: "if",
-    		source: "(87:2) {#if sectionSteps}",
+    		source: "(92:2) {#if sectionSteps}",
     		ctx
     	});
 
@@ -5274,10 +5274,10 @@ ${JSON.stringify(
     			button.textContent = "Add Step";
     			t2 = space();
     			if (if_block) if_block.c();
-    			add_location(div0, file$4, 59, 0, 1107);
-    			add_location(button, file$4, 82, 2, 1560);
+    			add_location(div0, file$4, 64, 0, 1217);
+    			add_location(button, file$4, 87, 2, 1670);
     			attr_dev(div1, "class", "section-footer svelte-6libs6");
-    			add_location(div1, file$4, 81, 0, 1529);
+    			add_location(div1, file$4, 86, 0, 1639);
     		},
     		l: function claim(nodes) {
     			throw new Error("options.hydrate only works if the component was compiled with the `hydratable: true` option");
@@ -5416,7 +5416,14 @@ ${JSON.stringify(
     			{
     				id: shortUuid.generate(),
     				name: '',
-    				children: []
+    				children: [
+    					{
+    						id: shortUuid.generate(),
+    						text: "",
+    						type: "HowToDirection",
+    						image: null
+    					}
+    				]
     			}
     		]);
     	};

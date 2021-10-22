@@ -23,7 +23,7 @@
     step.children = [...step.children, {
       id: short.generate(),
       text: '',
-      type: 'HowToDirection',
+      type: 'HowToTip',
       image: null,
     }]
   }

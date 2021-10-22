@@ -26,7 +26,7 @@
 <div class="child">
   <div class="group">
     <label>
-      Type:
+      ≡ Type:
       <select bind:value={child.type}>
         <option value="HowToDirection">
           Direction
