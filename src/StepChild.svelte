@@ -21,6 +21,20 @@
     e.preventDefault()
     dispatch('delete', {id: child.id})
   }
+
+  // s s s s siiiide effffects!
+  const cleanThumborUrl = (url) => {
+    // lol this is gross
+    if (url && url.includes(`cdn.vox-cdn.com/thumbor`)) {
+      let parts = url.split('cdn.vox-cdn.com')
+      child.image = `${parts[0]}cdn.vox-cdn.com${parts[2]}`
+    }
+  }
+
+  $: {
+    cleanThumborUrl(child.image)
+  }
+
 </script>
 
 <div class="child">
