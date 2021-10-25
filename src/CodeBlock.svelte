@@ -16,9 +16,13 @@
   import { generateSchema } from './generateSchema.js'
   import ImportSchema from './ImportSchema.svelte'
 
+  // lol
+  const slash = () => `/`
+
   let snippet
   $: {
     snippet = `
+<script type="application/ld+json">
 ${JSON.stringify(generateSchema({
   name: $name,
   description: $description,
@@ -32,6 +36,7 @@ ${JSON.stringify(generateSchema({
   sections: $sections,
   steps: $steps,
 }), null, ' ')}
+<${slash()}script>
 `
   }
 
