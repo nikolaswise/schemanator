@@ -27,8 +27,6 @@
     tmpSections = $sections
     $sections = null
     hasSections = false
-    console.log(tmpSections)
-    console.log('remove sections, repace with steps')
   }
   const resetSections = () => {
     $sections = tmpSections

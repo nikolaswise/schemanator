@@ -59,7 +59,7 @@
     {#each step.children as child(child.id)}
       <StepChild
         on:delete={handleDeleteChild(child.id)}
-        child={child}
+        bind:child={child}
       />
     {/each}
   </div>
