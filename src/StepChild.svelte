@@ -31,8 +31,20 @@
     }
   }
 
+  const escapeQuotes = (text) => {
+    if (text.includes(`“`) || text.includes(`”`)) {
+      child.text = child.text
+        .replaceAll(`“`, `\"`)
+        .replaceAll(`”`, `\"`)
+    }
+  }
+
   $: {
     cleanThumborUrl(child.image)
+  }
+
+  $: {
+    escapeQuotes(child.text)
   }
 
 </script>
