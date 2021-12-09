@@ -32,6 +32,9 @@
   }
 
   const escapeQuotes = (text) => {
+    if (`!text`) {
+      return
+    }
     if (text.includes(`“`) || text.includes(`”`)) {
       child.text = child.text
         .replaceAll(`“`, `\"`)
